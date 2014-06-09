@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * SPSS Php Reader
+ * @author vk.tiamo@gmail.com
+ */
 defined('BIG_ENDIAN') OR define('BIG_ENDIAN', pack('L', 1) === pack('N', 1));
 
 class SPSSException extends Exception {}
@@ -505,6 +508,7 @@ class SPSSReader
 	/**
 	 * Read Variable params
 	 * 
+	 * @param int $count_variables
 	 * @return void
 	 */
 	private function _readVariableParams($count_variables)
@@ -529,7 +533,7 @@ class SPSSReader
 	 * labels), and type 4 is the variable index record (which variables 
 	 * have these value-field pairs).
 	 * 
-	 * @return object
+	 * @return void
 	 */
 	private function _readValueLabels()
 	{
@@ -550,7 +554,7 @@ class SPSSReader
 	/**
 	 * Read documents
 	 * 
-	 * @return object
+	 * @return array
 	 */
 	private function _readDocuments()
 	{
@@ -601,6 +605,7 @@ class SPSSReader
 		$data->systemMissingValue = $this->readDouble();
 		$data->highest = $this->readDouble();
 		$data->lowest = $this->readDouble();
+		
 		return $data;
 	}
 	
@@ -609,6 +614,7 @@ class SPSSReader
 	 * 
 	 * @param int $num
 	 * @param int $pos
+	 * @param string $unpackFormat
 	 * @return array
 	 */
 	private function read($num=1, $pos=-1, $unpackFormat='C*')
@@ -647,7 +653,6 @@ class SPSSReader
 	 * Read string bytes
 	 * 
 	 * @param int $num
-	 * @param int $pos
 	 * @return string
 	 */
 	private function readString($num=1)
@@ -658,7 +663,7 @@ class SPSSReader
 	/**
 	 * Read integer
 	 * 
-	 * @retunr integer
+	 * @return integer
 	 */
 	private function readInt()
 	{
@@ -675,7 +680,7 @@ class SPSSReader
 	/**
 	 * Read big integer
 	 * 
-	 * @retunr integer
+	 * @return integer
 	 */
 	private function readBigInt()
 	{

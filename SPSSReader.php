@@ -13,41 +13,41 @@ class SPSSReader
 	const RECORD_TYPE_DATA = 7;
 	const RECORD_TYPE_END = 999;
 	
-	const FORMAT_TYPE_A        = 1;
-	const FORMAT_TYPE_AHEX     = 2;
-	const FORMAT_TYPE_COMMA    = 3;
+	const FORMAT_TYPE_A		= 1;
+	const FORMAT_TYPE_AHEX	 = 2;
+	const FORMAT_TYPE_COMMA	= 3;
 	const FORMAT_TYPE_DOLLAR   = 4;
-	const FORMAT_TYPE_F        = 5;
-	const FORMAT_TYPE_IB       = 6;
+	const FORMAT_TYPE_F		= 5;
+	const FORMAT_TYPE_IB	   = 6;
 	const FORMAT_TYPE_PIBHEX   = 7;
-	const FORMAT_TYPE_P        = 8;
-	const FORMAT_TYPE_PIB      = 9;
-	const FORMAT_TYPE_PK       = 10;
-	const FORMAT_TYPE_RB       = 11;
-	const FORMAT_TYPE_RBHEX    = 12;
-	const FORMAT_TYPE_Z        = 15;
-	const FORMAT_TYPE_N        = 16;
-	const FORMAT_TYPE_E        = 17;
-	const FORMAT_TYPE_DATE     = 20;
-	const FORMAT_TYPE_TIME     = 21;
+	const FORMAT_TYPE_P		= 8;
+	const FORMAT_TYPE_PIB	  = 9;
+	const FORMAT_TYPE_PK	   = 10;
+	const FORMAT_TYPE_RB	   = 11;
+	const FORMAT_TYPE_RBHEX	= 12;
+	const FORMAT_TYPE_Z		= 15;
+	const FORMAT_TYPE_N		= 16;
+	const FORMAT_TYPE_E		= 17;
+	const FORMAT_TYPE_DATE	 = 20;
+	const FORMAT_TYPE_TIME	 = 21;
 	const FORMAT_TYPE_DATETIME = 22;
-	const FORMAT_TYPE_ADATE    = 23;
-	const FORMAT_TYPE_JDATE    = 24;
-	const FORMAT_TYPE_DTIME    = 25;
-	const FORMAT_TYPE_WKDAY    = 26;
-	const FORMAT_TYPE_MONTH    = 27;
-	const FORMAT_TYPE_MOYR     = 28;
-	const FORMAT_TYPE_QYR      = 29;
-	const FORMAT_TYPE_WKYR     = 30;
-	const FORMAT_TYPE_PCT      = 31;
-	const FORMAT_TYPE_DOT      = 32;
-	const FORMAT_TYPE_CCA      = 33;
-	const FORMAT_TYPE_CCB      = 34;
-	const FORMAT_TYPE_CCC      = 35;
-	const FORMAT_TYPE_CCD      = 36;
-	const FORMAT_TYPE_CCE      = 37;
-	const FORMAT_TYPE_EDATE    = 38;
-	const FORMAT_TYPE_SDATE    = 39;
+	const FORMAT_TYPE_ADATE	= 23;
+	const FORMAT_TYPE_JDATE	= 24;
+	const FORMAT_TYPE_DTIME	= 25;
+	const FORMAT_TYPE_WKDAY	= 26;
+	const FORMAT_TYPE_MONTH	= 27;
+	const FORMAT_TYPE_MOYR	 = 28;
+	const FORMAT_TYPE_QYR	  = 29;
+	const FORMAT_TYPE_WKYR	 = 30;
+	const FORMAT_TYPE_PCT	  = 31;
+	const FORMAT_TYPE_DOT	  = 32;
+	const FORMAT_TYPE_CCA	  = 33;
+	const FORMAT_TYPE_CCB	  = 34;
+	const FORMAT_TYPE_CCC	  = 35;
+	const FORMAT_TYPE_CCD	  = 36;
+	const FORMAT_TYPE_CCE	  = 37;
+	const FORMAT_TYPE_EDATE	= 38;
+	const FORMAT_TYPE_SDATE	= 39;
 	
 	public $header;
 	public $specificInfo;
@@ -78,17 +78,17 @@ class SPSSReader
 	}
 	
 	/**
-     * This method returns the print / write format code of a variable. The 
-     * returned value is a tuple consisting of the format abbreviation 
-     * (string <= 8 chars) and a meaning (long string). Non-existent codes 
-     * have a (null, null) tuple returned.
+	 * This method returns the print / write format code of a variable. The 
+	 * returned value is a tuple consisting of the format abbreviation 
+	 * (string <= 8 chars) and a meaning (long string). Non-existent codes 
+	 * have a (null, null) tuple returned.
 	 * 
 	 * @param integer $type
 	 * @return string
 	 */
-    public function getPrintWriteCode($type)
+	public function getPrintWriteCode($type)
 	{
-	    switch($type) {
+		switch($type) {
 			case 0: return array('','Continuation of string variable');
 			case self::FORMAT_TYPE_A: return array('A','Alphanumeric');
 			case self::FORMAT_TYPE_AHEX: return array('AHEX', 'alphanumeric hexadecimal');
@@ -127,7 +127,7 @@ class SPSSReader
 			case self::FORMAT_TYPE_SDATE: return array('SDATE', 'Date in yyyy/mm/dd style');
 			default: return array(null, null);
 		}
-    }
+	}
 	
 	/**
 	 * Check is date format
@@ -135,9 +135,9 @@ class SPSSReader
 	 * @param integer $type
 	 * @return boolean
 	 */
-    public function isDateFormat($type)
+	public function isDateFormat($type)
 	{
-        return $type == self::FORMAT_TYPE_DATE ||
+		return $type == self::FORMAT_TYPE_DATE ||
 			$type == self::FORMAT_TYPE_DATETIME ||
 			$type == self::FORMAT_TYPE_ADATE ||
 			$type == self::FORMAT_TYPE_JDATE ||
@@ -147,7 +147,7 @@ class SPSSReader
 			$type == self::FORMAT_TYPE_MOYR ||
 			$type == self::FORMAT_TYPE_WKYR
 		;
-    }
+	}
 	
 	/**
 	 * Read spss file
@@ -342,7 +342,7 @@ class SPSSReader
 	 **/
 	private function _readDataNumber()
 	{
-        if ($this->header->compressionSwitch == 0) { // uncompressed number
+		if ($this->header->compressionSwitch == 0) { // uncompressed number
 			return $this->readDouble();
 		}
 		else { // compressed number
@@ -375,14 +375,14 @@ class SPSSReader
 	/**
 	 * This method is called when a string is to be retrieved. Strings can be 
 	 * longer than 8-bytes long if so indicated. This method returns systemMissingValue 
-     * (the string not the Boolean) is returned due to conflicts. 
+	 * (the string not the Boolean) is returned due to conflicts. 
 	 * 
 	 * @param object $var
 	 * @return string
 	 **/
 	private function _readDataString($var)
 	{
-        if ($this->header->compressionSwitch == 0) { // uncompressed string
+		if ($this->header->compressionSwitch == 0) { // uncompressed string
 			return $this->readSring(8);
 		}
 		else { // compressed string
@@ -525,9 +525,9 @@ class SPSSReader
 	
 	/**
 	 * Read valuelabels information
-     * This method reads in a type 3. Type 3 is a value label record (value-field pairs for 
-     * labels), and type 4 is the variable index record (which variables 
-     * have these value-field pairs).
+	 * This method reads in a type 3. Type 3 is a value label record (value-field pairs for 
+	 * labels), and type 4 is the variable index record (which variables 
+	 * have these value-field pairs).
 	 * 
 	 * @return object
 	 */
@@ -538,9 +538,9 @@ class SPSSReader
 		// do for each pair
 		for($i=0; $i < $labelCount; $i++) {
 			$value = $this->readDouble();
-            $l = ord($this->readString());
-            if (($l % 8) != 0) {
-                $l = $l + 8 - ($l % 8);
+			$l = ord($this->readString());
+			if (($l % 8) != 0) {
+				$l = $l + 8 - ($l % 8);
 			}
 			$data[$value] = trim( $this->readString($l-1) );
 		}
@@ -571,8 +571,8 @@ class SPSSReader
 	{
 		// this is for release and machine-specific information
 		$floating = array("IEEE","IBM 370", "DEC VAX E");
-        $endian = array("Big-endian","Little-endian");
-        $character = array("EBCDIC","7-bit ASCII","8-bit ASCII","DEC Kanji");
+		$endian = array("Big-endian","Little-endian");
+		$character = array("EBCDIC","7-bit ASCII","8-bit ASCII","DEC Kanji");
 		
 		$data = new stdClass();
 		$data->releaseNumber = $this->readInt();
@@ -669,41 +669,41 @@ class SPSSReader
 		// $bytes = unpack("i",$bytes);
 		// return $bytes[1];
 		$bytes = $this->read(4);
-        return ($bytes[3] & 0xff) << 24 | ($bytes[2] & 0xff) << 16 | ($bytes[1] & 0xff) << 8 | $bytes[0] & 0xff;
-    }
+		return ($bytes[3] & 0xff) << 24 | ($bytes[2] & 0xff) << 16 | ($bytes[1] & 0xff) << 8 | $bytes[0] & 0xff;
+	}
 	
 	/**
 	 * Read big integer
 	 * 
 	 * @retunr integer
 	 */
-    private function readBigInt()
+	private function readBigInt()
 	{
 		$bytes = $this->read(4);
-        return ($bytes[0] & 0xff) << 24 | ($bytes[1] & 0xff) << 16 | ($bytes[2] & 0xff) << 8 | $bytes[3] & 0xff;
-    }
+		return ($bytes[0] & 0xff) << 24 | ($bytes[1] & 0xff) << 16 | ($bytes[2] & 0xff) << 8 | $bytes[3] & 0xff;
+	}
 	
 	/**
 	 * Read Short
 	 * 
 	 * @retunr integer
 	 */
-    private function readShort()
+	private function readShort()
 	{
 		$bytes = $this->read(2);
-        return ($bytes[0] & 0xff) | ($bytes[1] & 0xff) << 8;
-    }
+		return ($bytes[0] & 0xff) | ($bytes[1] & 0xff) << 8;
+	}
 	
 	/**
 	 * Read Big Short
 	 * 
 	 * @retunr integer
 	 */
-    private function readBigShort($bytes=null)
+	private function readBigShort($bytes=null)
 	{
 		$bytes = $this->read(2);
-        return ($bytes[0] & 0xff) << 8 | ($bytes[1] & 0xff);
-    }
+		return ($bytes[0] & 0xff) << 8 | ($bytes[1] & 0xff);
+	}
 	
 	/**
 	 * Reads the 8 bytes and interprets them as a double precision floating point value
@@ -726,10 +726,10 @@ class SPSSReader
 	 * @param int $num
 	 * @return void
 	 */
-    private function skipBytes($num)
+	private function skipBytes($num)
 	{
 		$this->_cursor += (int) $num;
-    }
+	}
 	
 	/**
 	 * Show bytes

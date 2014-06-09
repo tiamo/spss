@@ -22,17 +22,19 @@ class SPSS
 	
 	public function __construct($file=null)
 	{
-		if ($file)
-		{
-			if (!@file_exists($file))
+		if ($file) {
+			if (!@file_exists($file)) {
 				throw new SPSS_Exception(sprintf('File "%s" not exists', $file));
+			}
 			$this->_file = fopen($file,'r');
 		}
 	}
 	
 	public function __destruct()
 	{
-		if ($this->_file) fclose($this->_file);
+		if ($this->_file) {
+			fclose($this->_file);
+		}
 	}
 	
 	/**
@@ -59,11 +61,10 @@ class SPSS
 		$this->_cursor = 0;
 		$stop = false;
 		
-		while (!$stop)
-		{
+		while (!$stop) {
+			// record type
 			$type = $this->readInt();
-			switch($type)
-			{
+			switch($type) {
 				// General Inforamtion
 				case(self::RECORD_TYPE_1):
 					$this->header = $this->_readHeader();
@@ -94,11 +95,12 @@ class SPSS
 				
 				// Read and parse additional records
 				case(self::RECORD_TYPE_7):
+					// subtype
 					$subtype = $this->readInt();
+					// data elements
 					$datalen = $this->readInt();
 					$count = $this->readInt();
-					switch($subtype)
-					{
+					switch($subtype) {
 						# SpecificInfoReader
 						case 3:
 							$result->specificInfo = $this->_readSpecificInfo();
@@ -118,12 +120,32 @@ class SPSS
 							break;
 						# VariableParamsReader
 						case 11:
-							$result->variableParams = $this->readString($datalen * $count);
+							if ($datalen != 4) {
+								throw new SPSS_Exception("Error reading record type 7 subtype 11: bad data element length [{$datalen}]. Expecting 4.");
+							}
+							if (($count % 3) != 0) {
+								throw new SPSS_Exception("Error reading record type 7 subtype 11: number of data elements [{$count}] is not a multiple of 3.");
+							}
+							$variableParams = array();
+							$count_variables = $count / 3;
+							for ($i = 0; $i < $count_variables; $i++) {
+								$param = new stdClass();
+								$param->measure = $this->readInt();
+								$param->width = $this->readInt();
+								$param->alignment = $this->readInt();
+								$variableParams[] = $param;
+							}
+							$result->variableParams = $variableParams;
 							break;
 						# ExtendedNamesReader
 						case 13:
-							// TODO: parse
-							$result->extendedNames = $this->readString($datalen * $count);
+							$data = $this->readString($datalen * $count);
+							$extendedNames = array();
+							foreach(explode("\t", $data) as $row) {
+								list($key,$value) = explode('=', $row);
+								$extendedNames[$key] = $value;
+							}
+							$result->extendedNames = $extendedNames;
 							break;
 						# ExtendedStringsReader
 						case 14:
@@ -205,14 +227,11 @@ class SPSS
 		$data->printFormatCode = $this->readInt();
 		$data->writeFormatCode = $this->readInt();
 		$data->name = $this->readString(8);
-		if ($data->labelFlag==1)
-		{
-			if ($this->header->layoutCode==1)
-			{
+		if ($data->labelFlag==1) {
+			if ($this->header->layoutCode==1) {
 				 $data->label = $this->readString(40);
 			}
-			else
-			{
+			else {
 				// round label len up to nearest multiple of 4 bytes
 				$tmp_len = $this->readInt();
 				$tmp_mod = ($tmp_len % 4);
@@ -223,11 +242,9 @@ class SPSS
 			}
 			$data->label = trim($data->label);
 		}
-		if ($data->missingValueFormat!=0)
-		{
+		if ($data->missingValueFormat!=0) {
 			$data->missingValues = array();
-			for($i=0;$i<abs($data->missingValueFormat);$i++)
-			{
+			for($i=0;$i<abs($data->missingValueFormat);$i++) {
 				$data->missingValues[] = $this->readDouble();
 			}
 		}
@@ -244,19 +261,18 @@ class SPSS
 		$count = $this->readInt();
 		
 		// do for each pair
-		for($i=0; $i < $count; $i++)
-		{
+		for($i=0; $i < $count; $i++) {
 			$value = $this->readDouble();
-			if ($this->header->layoutCode == 1)
-			{
+			if ($this->header->layoutCode == 1) {
 				$label = $this->readString(20);
 				$this->readInt();
 			}
-			else
-			{
-				$tmp_len = reset($this->read());
-				if ($tmp_len < 1 || $tmp_len > 255)
+			else {
+				$bytes = $this->read();
+				$tmp_len = reset($bytes);
+				if ($tmp_len < 1 || $tmp_len > 255) {
 					throw new SPSS_Exception(sprintf('Invalid value label record "%s"',$tmp_len));
+				}
 				# round label len up to nearest multiple of 8 bytes
 				$tmp_mod = (($tmp_len + 1) % 8);
 				if ($tmp_mod != 0) {
@@ -279,8 +295,7 @@ class SPSS
 	{
 		$data = array();
 		$count = $this->readInt();
-		for ($i=0; $i < $count; $i++)
-		{
+		for ($i=0; $i < $count; $i++) {
 			$data[] = $this->readString(80);
 		}
 		return $data;
@@ -325,17 +340,17 @@ class SPSS
 	 */
 	private function read($num=1, $pos=-1, $unpackFormat='C*')
 	{
-		if (!$this->_file)
+		if (!$this->_file) {
 			return;
-		if ($pos >= 0)
+		}
+		if ($pos >= 0) {
 			$this->_cursor = $pos;
+		}
 		// do we need more data?		
-		if ($this->_cursor + $num-1 >= strlen($this->_buffer))
-		{
+		if ($this->_cursor + $num-1 >= strlen($this->_buffer)) {
 			$response = null;
 			$end = ($this->_cursor + $num);
-			while (strlen($this->_buffer) < $end && $response !== false)
-			{
+			while (strlen($this->_buffer) < $end && $response !== false) {
 				$need = $end - ftell($this->_file);
 				if ($response = fread($this->_file, $need))
 					$this->_buffer .= $response;
@@ -345,8 +360,7 @@ class SPSS
 		}
 		$result = substr($this->_buffer, $this->_cursor, $num);
 		$this->_cursor += $num;
-		if ($unpackFormat)
-		{
+		if ($unpackFormat) {
 			// we are dealing with bytes here, so force the encoding
 			// $result = mb_convert_encoding($result, "8BIT");
 			$result = unpack($unpackFormat, $result);
@@ -436,8 +450,9 @@ class SPSS
 	private function showBytes($bytes)
 	{
 		$str='';
-		foreach($bytes as $byte)
+		foreach($bytes as $byte) {
 			$str.=chr($byte);
+		}
 		return $str;
 	}
 }

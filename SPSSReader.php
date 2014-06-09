@@ -13,41 +13,41 @@ class SPSSReader
 	const RECORD_TYPE_DATA = 7;
 	const RECORD_TYPE_END = 999;
 	
-	const FORMAT_TYPE_A		= 1;
-	const FORMAT_TYPE_AHEX	 = 2;
-	const FORMAT_TYPE_COMMA	= 3;
-	const FORMAT_TYPE_DOLLAR   = 4;
-	const FORMAT_TYPE_F		= 5;
-	const FORMAT_TYPE_IB	   = 6;
-	const FORMAT_TYPE_PIBHEX   = 7;
-	const FORMAT_TYPE_P		= 8;
-	const FORMAT_TYPE_PIB	  = 9;
-	const FORMAT_TYPE_PK	   = 10;
-	const FORMAT_TYPE_RB	   = 11;
-	const FORMAT_TYPE_RBHEX	= 12;
-	const FORMAT_TYPE_Z		= 15;
-	const FORMAT_TYPE_N		= 16;
-	const FORMAT_TYPE_E		= 17;
-	const FORMAT_TYPE_DATE	 = 20;
-	const FORMAT_TYPE_TIME	 = 21;
-	const FORMAT_TYPE_DATETIME = 22;
-	const FORMAT_TYPE_ADATE	= 23;
-	const FORMAT_TYPE_JDATE	= 24;
-	const FORMAT_TYPE_DTIME	= 25;
-	const FORMAT_TYPE_WKDAY	= 26;
-	const FORMAT_TYPE_MONTH	= 27;
-	const FORMAT_TYPE_MOYR	 = 28;
-	const FORMAT_TYPE_QYR	  = 29;
-	const FORMAT_TYPE_WKYR	 = 30;
-	const FORMAT_TYPE_PCT	  = 31;
-	const FORMAT_TYPE_DOT	  = 32;
-	const FORMAT_TYPE_CCA	  = 33;
-	const FORMAT_TYPE_CCB	  = 34;
-	const FORMAT_TYPE_CCC	  = 35;
-	const FORMAT_TYPE_CCD	  = 36;
-	const FORMAT_TYPE_CCE	  = 37;
-	const FORMAT_TYPE_EDATE	= 38;
-	const FORMAT_TYPE_SDATE	= 39;
+	const FORMAT_TYPE_A			= 1;
+	const FORMAT_TYPE_AHEX		= 2;
+	const FORMAT_TYPE_COMMA		= 3;
+	const FORMAT_TYPE_DOLLAR	= 4;
+	const FORMAT_TYPE_F			= 5;
+	const FORMAT_TYPE_IB		= 6;
+	const FORMAT_TYPE_PIBHEX	= 7;
+	const FORMAT_TYPE_P			= 8;
+	const FORMAT_TYPE_PIB		= 9;
+	const FORMAT_TYPE_PK		= 10;
+	const FORMAT_TYPE_RB		= 11;
+	const FORMAT_TYPE_RBHEX		= 12;
+	const FORMAT_TYPE_Z			= 15;
+	const FORMAT_TYPE_N			= 16;
+	const FORMAT_TYPE_E			= 17;
+	const FORMAT_TYPE_DATE		= 20;
+	const FORMAT_TYPE_TIME		= 21;
+	const FORMAT_TYPE_DATETIME	= 22;
+	const FORMAT_TYPE_ADATE		= 23;
+	const FORMAT_TYPE_JDATE		= 24;
+	const FORMAT_TYPE_DTIME		= 25;
+	const FORMAT_TYPE_WKDAY		= 26;
+	const FORMAT_TYPE_MONTH		= 27;
+	const FORMAT_TYPE_MOYR		= 28;
+	const FORMAT_TYPE_QYR		= 29;
+	const FORMAT_TYPE_WKYR		= 30;
+	const FORMAT_TYPE_PCT		= 31;
+	const FORMAT_TYPE_DOT		= 32;
+	const FORMAT_TYPE_CCA		= 33;
+	const FORMAT_TYPE_CCB		= 34;
+	const FORMAT_TYPE_CCC		= 35;
+	const FORMAT_TYPE_CCD		= 36;
+	const FORMAT_TYPE_CCE		= 37;
+	const FORMAT_TYPE_EDATE		= 38;
+	const FORMAT_TYPE_SDATE		= 39;
 	
 	public $header;
 	public $specificInfo;
@@ -312,7 +312,7 @@ class SPSSReader
 	 * appropriate variable's 'data' attribute.
 	 * 
 	 * @return void
-	 **/
+	 */
 	private function _readData()
 	{
 		// read variables data
@@ -339,7 +339,7 @@ class SPSSReader
 	 * 
 	 * @param object $var
 	 * @return string
-	 **/
+	 */
 	private function _readDataNumber()
 	{
 		if ($this->header->compressionSwitch == 0) { // uncompressed number
@@ -379,7 +379,7 @@ class SPSSReader
 	 * 
 	 * @param object $var
 	 * @return string
-	 **/
+	 */
 	private function _readDataString($var)
 	{
 		if ($this->header->compressionSwitch == 0) { // uncompressed string

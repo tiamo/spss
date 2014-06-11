@@ -327,11 +327,11 @@ class SPSSReader
 			foreach($this->variables as $var) {
 				// numeric
 				if ($var->typeCode==0) {
-					// $var->data[] = $this->_readDataNumber();
+					$var->data[] = $this->_readDataNumber();
 				}
 				//string
 				elseif ($var->typeCode > 0 && $var->typeCode < 256) {
-					// $var->data[] = $this->_readDataString($var);
+					$var->data[] = $this->_readDataString($var);
 				}
 			}
 		}

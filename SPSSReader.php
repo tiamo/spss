@@ -69,15 +69,17 @@ class SPSSReader
 			$this->_file = fopen($file,'r');
 		}
 		$this->_read();
+		$this->_buffer = '';
+		$this->_cursor = 0;
 	}
 	
 	public function __destruct()
 	{
 		if ($this->_file) {
 			fclose($this->_file);
-			$this->_buffer = '';
-			$this->_cursor = 0;
 		}
+		$this->_buffer = '';
+		$this->_cursor = 0;
 	}
 	
 	/**
@@ -164,7 +166,6 @@ class SPSSReader
 		$this->valueLabelsIndex = array();
 		$this->documents = array();
 		$this->multiResponse = array();
-		$this->dateVars = array();
 		$this->miscInfo = array();
 		
 		// reset buffer
@@ -193,9 +194,11 @@ class SPSSReader
 				// Read and parse value label index records
 				case(self::RECORD_TYPE_VALUE_LABEL_INDEX):
 					$count = $this->readInt();
+					$variableIndex = array();
 					for($i=0;$i<$count;$i++) {
-						$result->valueLabelsIndex[] = $this->readInt();
+						$variableIndex[$i] = $this->readInt();
 					}
+					$this->valueLabelsIndex[] = $variableIndex;
 					break;
 				
 				// Read and parse document records
@@ -220,19 +223,19 @@ class SPSSReader
 							break;
 						// VariableSetsReader
 						case 5:
-							$result->variableSets = $this->readString($datalen);
+							$this->variableSets = $this->readString($datalen);
 							break;
 						// VariableTrendsReader
 						// case 6:
 							// get data array
-							// $result->explicitPeriodFlag = $this->readInt();
-							// $result->period = $this->readInt();
-							// $result->numDateVars = $this->readInt();
-							// $result->lowestIncr = $this->readInt();
-							// $result->highestStart = $this->readInt();
-							// $result->dateVarsMarker = $this->readInt();
-							// for($i=0;$i<$result->numDateVars;$i++) {
-								// $result->dateVars[] = array(
+							// $this->explicitPeriodFlag = $this->readInt();
+							// $this->period = $this->readInt();
+							// $this->numDateVars = $this->readInt();
+							// $this->lowestIncr = $this->readInt();
+							// $this->highestStart = $this->readInt();
+							// $this->dateVarsMarker = $this->readInt();
+							// for($i=0;$i<$this->numDateVars;$i++) {
+								// $this->dateVars[] = array(
 									// $this->readInt(),
 									// $this->readInt(),
 									// $this->readInt(),
@@ -324,11 +327,11 @@ class SPSSReader
 			foreach($this->variables as $var) {
 				// numeric
 				if ($var->typeCode==0) {
-					$var->data[] = $this->_readDataNumber();
+					// $var->data[] = $this->_readDataNumber();
 				}
 				//string
 				elseif ($var->typeCode > 0 && $var->typeCode < 256) {
-					$var->data[] = $this->_readDataString($var);
+					// $var->data[] = $this->_readDataString($var);
 				}
 			}
 		}
@@ -410,7 +413,7 @@ class SPSSReader
 						return $this->specificFloatInfo->systemMissingValue;
 					}
 					else {
-						$ln .= $this->packBytes($bytes);
+						$ln .= $this->packStr($bytes);
 						if (strlen($ln) > $var->typeCode) {
 							return $ln;
 						}
@@ -538,16 +541,25 @@ class SPSSReader
 	private function _readValueLabels()
 	{
 		$data = array();
-		$labelCount = $this->readInt();
-		// do for each pair
-		for($i=0; $i < $labelCount; $i++) {
+		// number of labels
+		$labelsCount = $this->readInt();
+		
+		// labels
+		for($i=0; $i < $labelsCount; $i++) {
 			$value = $this->readDouble();
-			$l = ord($this->readString());
-			if (($l % 8) != 0) {
-				$l = $l + 8 - ($l % 8);
+			// the following byte in an unsigned integer (max value is 60)
+			$labelLength = $this->read(1);
+			$labelLength = $labelLength[0];
+			// read the label
+			$data[$value] = $this->readString($labelLength);
+			// value labels are stored in chunks of 8-bytes with space allocated
+			// for length+1 characters
+			// --> we need to skip unused bytes in the last chunk
+			if (($labelLength+1) % 8 != 0) {
+				$this->skipBytes(8 - (($labelLength + 1) % 8));
 			}
-			$data[$value] = trim( $this->readString($l-1) );
 		}
+		
 		$this->valueLabels[] = $data;
 	}
 	
@@ -589,7 +601,7 @@ class SPSSReader
 		$data->endianCode = $this->readInt();
 		$data->endianName = isset($endian[$data->endianCode-1]) ? $endian[$data->endianCode-1] : null;
 		$data->charRepresentationCode = $this->readInt();
-		$data->charRepresentationName = isset($character[$data->charRepresentationCode-1]) ? $character[$data->charRepresentationCode-1] : null;
+		// $data->charRepresentationName = isset($character[$data->charRepresentationCode]) ? $character[$data->charRepresentationCode] : null;
 		
 		return $data;
 	}
@@ -657,7 +669,7 @@ class SPSSReader
 	 */
 	private function readString($num=1)
 	{
-		return $this->packBytes($this->read($num));
+		return $this->packStr($this->read($num));
 	}
 	
 	/**
@@ -667,47 +679,8 @@ class SPSSReader
 	 */
 	private function readInt()
 	{
-		// $bytes = $this->read(4,-1,false);
-		// if (BIG_ENDIAN) {
-			// $bytes = strrev($bytes);
-		// }
-		// $bytes = unpack("i",$bytes);
-		// return $bytes[1];
-		$bytes = $this->read(4);
-		return ($bytes[3] & 0xff) << 24 | ($bytes[2] & 0xff) << 16 | ($bytes[1] & 0xff) << 8 | $bytes[0] & 0xff;
-	}
-	
-	/**
-	 * Read big integer
-	 * 
-	 * @return integer
-	 */
-	private function readBigInt()
-	{
-		$bytes = $this->read(4);
-		return ($bytes[0] & 0xff) << 24 | ($bytes[1] & 0xff) << 16 | ($bytes[2] & 0xff) << 8 | $bytes[3] & 0xff;
-	}
-	
-	/**
-	 * Read Short
-	 * 
-	 * @retunr integer
-	 */
-	private function readShort()
-	{
-		$bytes = $this->read(2);
-		return ($bytes[0] & 0xff) | ($bytes[1] & 0xff) << 8;
-	}
-	
-	/**
-	 * Read Big Short
-	 * 
-	 * @retunr integer
-	 */
-	private function readBigShort($bytes=null)
-	{
-		$bytes = $this->read(2);
-		return ($bytes[0] & 0xff) << 8 | ($bytes[1] & 0xff);
+		$bytes = $this->read(4,-1,'i');
+		return $bytes[0];
 	}
 	
 	/**
@@ -717,12 +690,8 @@ class SPSSReader
 	 */
 	private function readDouble()
 	{
-		$bytes = $this->readString(8,-1,false);
-		if (BIG_ENDIAN) {
-			$bytes = strrev($bytes);
-		}
-		$bytes = unpack("d",$bytes);
-		return $bytes[1];
+		$bytes = $this->read(8,-1,'d');
+		return $bytes[0];
 	}
 	
 	/**
@@ -736,13 +705,7 @@ class SPSSReader
 		$this->_cursor += (int) $num;
 	}
 	
-	/**
-	 * Show bytes
-	 * 
-	 * @param array $bytes
-	 * @return string
-	 */
-	private function packBytes($bytes)
+	private function packStr($bytes)
 	{
 		$str='';
 		foreach($bytes as $byte) {

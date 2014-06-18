@@ -464,48 +464,56 @@ class SPSSReader
 	{
 		$var = new stdClass();
 		$var->typeCode = $this->readInt();
+		$var->label = '';
+		$var->params = array();
+		$var->data = array();
+		$var->missingValues = array();
 		
+        // if type is not -1, then record is for a numeric var or the
+        // first (and only) instance of a string var
 		if ($var->typeCode!=-1) {
 			
+			// read label flag
 			$var->labelFlag = $this->readInt();
+			// read missing value format code
 			$var->missingValueFormat = $this->readInt();
+			// read print format code
 			$var->printFormatCode = $this->readInt();
 			$var->printFormat = array(
 				'decimalPlaces' => ($var->printFormatCode & 0x000000FF),
 				'width' => ($var->printFormatCode & 0x0000FF00) >> 8,
 				'type' => $this->getPrintWriteCode(($var->printFormatCode & 0x00FF0000) >> 16),
 			);
+			// read write format code
 			$var->writeFormatCode = $this->readInt();
 			$var->writeFormat = array(
 				'decimalPlaces' => ($var->writeFormatCode & 0x000000FF),
 				'width' => ($var->writeFormatCode & 0x0000FF00) >> 8,
 				'type' => $this->getPrintWriteCode(($var->writeFormatCode & 0x00FF0000) >> 16),
 			);
+			// read varname
 			$var->name = $this->readString(8); // 8-byte variable name
+			// read label length and label only if a label exists
 			if ($var->labelFlag==1) {
 				$var->labelLength = $this->readInt();
-				if (($var->labelLength % 4) != 0) {
-					$var->labelLength = $var->labelLength + 4 - ($var->labelLength % 4);
+				$var->label = $this->readString($var->labelLength);
+				if ($var->labelLength % 4 != 0) {
+					$this->skipBytes(4 - ($var->labelLength % 4));
 				}
-				$var->label = $this->readString($var->labelLength); // longer string label
 			}
-			else {
-				$var->label = '';
-			}
-			$var->missingValues = array();
+			// read missing values only if present
 			if ($var->missingValueFormat!=0) {
 				for($i=0;$i<abs($var->missingValueFormat);$i++) {
 					$var->missingValues[] = $this->readDouble();
 				}
 			}
+			$this->variables[] = $var;
 		}
+		// if TYPECODE is -1, record is a continuation of a string var
 		else {
-			// read the rest
+			// read and ignore the next 24 bytes
+			$this->skipBytes(24);
 		}
-		
-		$var->params = array();
-		$var->data = array();
-		$this->variables[] = $var;
 	}
 	
 	/**

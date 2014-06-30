@@ -2,7 +2,7 @@
 // header('Content-type:text/html;charset=utf8');
 
 require 'SPSSReader.php';
-$SPSS = new SPSSReader('data/voronezh/9.sav');
+$SPSS = new SPSSReader('data.sav');
 
 // $SPSS->loadData();
 // print_r($SPSS);

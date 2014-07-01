@@ -916,13 +916,13 @@ class SPSSReader
 					$blocksToRead--;
 				}
 				
-				$strData = trim($strData);
-				
 				// Store in variable
 				if ($varType==SPSSVariable::TYPE_NUMERIC) {
 					$var->data[] = $numData;
 				}
 				else {
+					$strData = trim($strData);
+					
 					if ($var->isExtended) {
 						$this->variables[$var->isExtended]->data[$i] .= $strData;
 					}

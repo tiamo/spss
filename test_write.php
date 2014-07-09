@@ -1,5 +1,4 @@
 <?php
-header('Content-type:text/html;charset=cp1251');
 
 // make conf
 $filename = 'data';

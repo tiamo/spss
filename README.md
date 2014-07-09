@@ -1,6 +1,4 @@
 spss
 ====
 
-php spss
-
-TODO: SPSS Writer
+php spss libryary

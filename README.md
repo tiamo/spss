@@ -1,4 +1,4 @@
 spss
 ====
 
-php spss libryary
+php spss library

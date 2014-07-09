@@ -20,10 +20,10 @@ class SPSSWriter
 	const RECORD_TYPE_ADDITIONAL = 7;
 	const RECORD_TYPE_FINAL = 999;
 	
-	public $writer = '@(#) SPSS DATA FILE MS Windows 17.0.0';
-	// public $writer = '@(#) FOM SPSS'; // 60 bytes max
+	// public $writer = '@(#) SPSS DATA FILE MS Windows 17.0.0';
+	public $writer = '@(#) FOM SPSS 1.0.0'; // 60 bytes max
 	public $fileLabel = ''; // 64 bytes max
-	public $release = array(17,0,0); // 64 bytes max
+	public $release = array(1,0,0); // 64 bytes max
 	public $charset = 'windows-1251';
 	public $compression = 0; // compression bias
 	public $numberOfCases = 1;

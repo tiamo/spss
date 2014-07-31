@@ -28,8 +28,8 @@ class SPSSWriter
 	public $compression = 0; // compression bias
 	public $numberOfCases = 1;
 	public $machineCode = 720;
-	// public $sysmis = -0xFFFFFFFFFFFFEFFF; // sysmis
-	public $sysmis = -1.7976931348623E+308; // sysmis
+	public $sysmis = -0xFFFFFFFFFFFFEFFF; // sysmis
+	// public $sysmis = -1.79769313486E+308; // sysmis
 	public $variables = array();
 	public $documents = array();
 	
@@ -136,7 +136,7 @@ class SPSSWriter
 		// has labels
 		if ($hasLabel) {
 			$label = $this->fixstr($var->label);
-			$labelLength = strlen($label);
+			$labelLength = strlen($var->label);
 			// variableRecord labels are stored in chunks of 4-bytes
 			// --> we need to skip unused bytes in the last chunk
 			$skipBytes = 0;
@@ -144,10 +144,7 @@ class SPSSWriter
 				$skipBytes = 4 - ($labelLength % 4);
 			}
 			$bytes .= pack('i', $labelLength); // label length
-			$bytes .= pack('a'.$labelLength, $label); // label
-			if ($skipBytes) {
-				$bytes .= pack('x'.$skipBytes); // padding
-			}
+			$bytes .= pack('A'.($labelLength+$skipBytes), $label); // label
 		}
 		// missing values
 		if ($var->missingValues) {
@@ -155,6 +152,16 @@ class SPSSWriter
 				$bytes .= pack('d', $val);
 			}
 		}
+		
+		// padding
+		if ($var->typeCode > 0) {
+			for($k = 8; $k < $var->typeCode; $k += 8) {
+				$fcode = self::toInt(array(1, 29, 1, 0));
+				$bytes .= pack('i6', 2, -1, 0, 0, $fcode, $fcode);
+				$bytes .= '        ';
+			}
+		}
+		
 		return $bytes;
 	}
 	
@@ -164,8 +171,7 @@ class SPSSWriter
 	 */
 	private function _valueLabelRecord(SPSSVariable $var)
 	{
-		static $index;
-		$index++;
+		$index = $this->getVarIndex($var);
 		
 		if (!$var->valueLabels) {
 			return;
@@ -177,27 +183,41 @@ class SPSSWriter
 		foreach($var->valueLabels as $key => $val) {
 			$label = $this->fixstr($val);
 			$labelLength = strlen($val);
+			if ($labelLength>255) {
+				$labelLength = 255;
+			}
 			$skipBytes = 0;
 			if (($labelLength+1) % 8){
 				$skipBytes = 8 - (($labelLength+1) % 8);
 			}
 			$bytes .= pack('d', $key);
-			$bytes .= pack('h', $labelLength);
-			$bytes .= pack('a'.$labelLength, $label);
-			if ($skipBytes) {
-				$bytes .= pack('x'.$skipBytes); // padding
-			}
+			$bytes .= chr($labelLength);
+			$bytes .= pack('A'.($labelLength+$skipBytes), $label);
 		}
 		
 		// record type 4 (value labels index)
 		$bytes .= pack('i', self::RECORD_TYPE_VALUE_LABELS_INDEX);
-		
-		// number of variables
-		// @todo: many variables
 		$bytes .= pack('i', 1);
 		$bytes .= pack('i', $index);
 		
 		return $bytes;
+	}
+	
+	/**
+	 * @param SPSSVariable $var
+	 * @return integer
+	 */
+	public function getVarIndex($var)
+	{
+		static $index;
+		// todo: get index by other typecodes
+		if ($var->typeCode>0) {
+			$index += ceil($var->getWidth()/8);
+		}
+		else {
+			$index++;
+		}
+		return $index;
 	}
 	
 	/**
@@ -309,10 +329,9 @@ class SPSSWriter
 			$data[] = $var->shortName.'='.(!empty($var->name) ? $var->name : $var->shortName);
 		}
 		$data = implode("\t", $data);
-		$data = $this->fixstr($data);
 		$datalen = strlen($data);
 		$bytes .= pack('i', $datalen); // count
-		$bytes .= pack('a'.$datalen, $data);
+		$bytes .= pack('a'.$datalen, $this->fixstr($data));
 		
 		return $bytes;
 	}
@@ -328,7 +347,8 @@ class SPSSWriter
 		$bytes .= pack('i', 16);
 		$bytes .= pack('i', 8); // size
 		$bytes .= pack('i', 2); // count
-		$bytes .= pack('d', 1); // byte order
+		$bytes .= pack('i', 1); // byte order
+		$bytes .= pack('i', 0); 
 		$bytes .= pack('d', 0); // count
 		
 		return $bytes;
@@ -406,5 +426,16 @@ class SPSSWriter
 			$str = iconv('utf-8', $this->charset, $str);
 		}
 		return $str;
+	}
+	
+	/**
+	 * Convert bytes array to integer
+	 * 
+	 * @params array $bytes
+	 * @return integer
+	 */
+	public static function toInt($bytes)
+	{
+		return $bytes[3]<<24 | $bytes[2]<<16 | $bytes[1]<<8 | $bytes[0]<<0;
 	}
 }

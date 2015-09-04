@@ -28,7 +28,7 @@ class SPSSWriter
 	public $compression = 0; // compression bias
 	public $numberOfCases = 1;
 	public $machineCode = 720;
-	public $sysmis = -0xFFFFFFFFFFFFEFFF; // sysmis
+	public $sysmis = -0x1fffffffffffff * 2.0**971;
 	// public $sysmis = -1.79769313486E+308; // sysmis
 	public $variables = array();
 	public $documents = array();

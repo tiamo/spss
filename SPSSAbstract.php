@@ -13,10 +13,10 @@ abstract class SPSSAbstract
 	const RECORD_TYPE_FINAL = 999;
 
 	const COMPRESS_SKIP_CODE = 0;
-    const COMPRESS_END_OF_FILE = 252;
-    const COMPRESS_NOT_COMPRESSED = 253;
+	const COMPRESS_END_OF_FILE = 252;
+	const COMPRESS_NOT_COMPRESSED = 253;
 	const COMPRESS_ALL_BLANKS = 254;
-    const COMPRESS_MISSING_VALUE = 255;
+	const COMPRESS_MISSING_VALUE = 255;
 
 	/**
 	 * Number of bytes really stored in each segment of a very long string variable.

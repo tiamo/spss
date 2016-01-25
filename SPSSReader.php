@@ -8,10 +8,9 @@
  */
 
 require_once 'SPSSVariable.php';
+require_once 'SPSSAbstract.php';
 
-class SPSSException extends Exception {}
-
-class SPSSReader
+class SPSSReader extends SPSSAbstract
 {
 	public $header;
 	public $specificInfo;
@@ -101,31 +100,31 @@ class SPSSReader
 			
 			switch($recordType) {
 				// Variable Record
-				case 2:
+				case self::RECORD_TYPE_VARIABLE:
 					$this->_readVariable();
 					$this->log('#'.$recordType);
 					break;
 				
 				// Value and labels
-				case 3:
+				case self::RECORD_TYPE_VALUE_LABELS:
 					$this->_readValueLabels();
 					$this->log('#'.$recordType);
 					break;
 				
 				// Read and parse document records
-				case 6:
+				case self::RECORD_TYPE_DOCUMENTS:
 					$this->documents = $this->_readDocuments();
-					$this->log('#'.$recordType);
+					$this->log("#{$recordType}");
 					break;
 				
 				// Read and parse additional records
-				case 7:
+				case self::RECORD_TYPE_ADDITIONAL:
 					$subtype = $this->readInt();
 					$size = $this->readInt();
 					$count = $this->readInt();
 					$datalen = $size * $count;
 					
-					$this->log('#'.$recordType . '--' . $subtype . ' ('.$size.','.$count.')<br/>');
+					$this->log("#{$recordType}--{$subtype} ({$size},{$count})");
 					
 					switch($subtype) {
 						
@@ -189,7 +188,7 @@ class SPSSReader
 							for ($i = 0; $i < $numberOfVariables; $i++) {
 								$var = $this->getVariable($i);
 								$var->measure = $this->readInt();
-								$var->width = $this->readInt();
+								$var->columns = $this->readInt();
 								$var->alignment = $this->readInt();
 							}
 							break;
@@ -280,7 +279,7 @@ class SPSSReader
 					break;
 				
 				// Finish
-				case 999:
+				case self::RECORD_TYPE_FINAL:
 					if ($this->readInt() != 0) {
 						throw new SPSSException("Error reading record type 999: Non-zero value found.");
 					}
@@ -576,7 +575,7 @@ class SPSSReader
 				}
 				else {
 					// string: depends on string length but always in blocks of 8 bytes
-					$charactersToRead = $var->typeCode;
+					$charactersToRead = $var->getWidth();
 					$blocksToRead = floor( (($charactersToRead - 1) / 8) + 1 );
 					$strData = "";
 				}
@@ -601,12 +600,12 @@ class SPSSReader
 						$this->clusterIndex++;
 						
 						switch ($byteValue) {
-						case 0: // skip this code
+						case self::COMPRESS_SKIP_CODE: // skip this code
 							break;
-						case 252: // end of file, no more data to follow. This should not happen.
+						case self::COMPRESS_END_OF_FILE: // end of file, no more data to follow. This should not happen.
 							throw new SPSSException("Error reading data: unexpected end of compressed data file (cluster code 252)");
 						break;
-						case 253: // data cannot be compressed, the value follows the cluster
+						case self::COMPRESS_NOT_COMPRESSED: // data cannot be compressed, the value follows the cluster
 							if ($varType==SPSSVariable::TYPE_NUMERIC) {
 								$numData = $this->readDouble();
 							}
@@ -624,7 +623,7 @@ class SPSSReader
 								$charactersToRead -= $blockStringLength;
 							}
 							break;
-						case 254: // all blanks
+						case self::COMPRESS_ALL_BLANKS: // all blanks
 							if ($varType==SPSSVariable::TYPE_NUMERIC) {
 								// note: not sure this is used for numeric values (?)
 								$numData = '0.0';
@@ -634,7 +633,7 @@ class SPSSReader
 								$strData .= "        ";
 							}
 							break;
-						case 255: // system missing value
+						case self::COMPRESS_MISSING_VALUE: // system missing value
 							if ($varType==SPSSVariable::TYPE_NUMERIC) {
 								// numeric variable
 								$numData = 'NaN';
@@ -645,7 +644,6 @@ class SPSSReader
 							}
 							break;
 						default: // 1-251 value is code minus the compression BIAS (normally always equal to 100)
-							
 							if ($varType==SPSSVariable::TYPE_NUMERIC) {
 								// numeric variable
 								$numData = $byteValue - $this->header->compressionBias;

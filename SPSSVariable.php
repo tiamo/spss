@@ -2,24 +2,24 @@
 
 class SPSSVariable
 {
-	const TYPE_NUMERIC			= 1;
-	const TYPE_STRING			= 2;
+	const TYPE_NUMERIC		= 1;
+	const TYPE_STRING		= 2;
 
-	const FORMAT_TYPE_A			= 1;
+	const FORMAT_TYPE_A		= 1;
 	const FORMAT_TYPE_AHEX		= 2;
 	const FORMAT_TYPE_COMMA		= 3;
 	const FORMAT_TYPE_DOLLAR	= 4;
-	const FORMAT_TYPE_F			= 5;
+	const FORMAT_TYPE_F		= 5;
 	const FORMAT_TYPE_IB		= 6;
 	const FORMAT_TYPE_PIBHEX	= 7;
-	const FORMAT_TYPE_P			= 8;
+	const FORMAT_TYPE_P		= 8;
 	const FORMAT_TYPE_PIB		= 9;
 	const FORMAT_TYPE_PK		= 10;
 	const FORMAT_TYPE_RB		= 11;
 	const FORMAT_TYPE_RBHEX		= 12;
-	const FORMAT_TYPE_Z			= 15;
-	const FORMAT_TYPE_N			= 16;
-	const FORMAT_TYPE_E			= 17;
+	const FORMAT_TYPE_Z		= 15;
+	const FORMAT_TYPE_N		= 16;
+	const FORMAT_TYPE_E		= 17;
 	const FORMAT_TYPE_DATE		= 20;
 	const FORMAT_TYPE_TIME		= 21;
 	const FORMAT_TYPE_DATETIME	= 22;

@@ -26,7 +26,7 @@ class SPSSWriter extends SPSSAbstract
 	/**
 	 * @var array Release version (major, minor, special)
 	 */
-	public $release = array(1,1,0); // 64 bytes max
+	public $release = array(1,1,0);
 
 	/**
 	 * @var string Charset

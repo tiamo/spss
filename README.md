@@ -1,4 +1,2 @@
-spss
+SPSS Reader and Writer
 ====
-
-php spss library

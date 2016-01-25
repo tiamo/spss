@@ -7,71 +7,94 @@
  */
 
 require_once 'SPSSVariable.php';
+require_once 'SPSSAbstract.php';
 
-class SPSSException extends Exception {}
-
-class SPSSWriter
+class SPSSWriter extends SPSSAbstract
 {
 	const FILE_SIGNATURE = '$FL2';
-	const RECORD_TYPE_VARIABLE = 2;
-	const RECORD_TYPE_VALUE_LABELS = 3;
-	const RECORD_TYPE_VALUE_LABELS_INDEX = 4;
-	const RECORD_TYPE_DOCUMENTS = 6;
-	const RECORD_TYPE_ADDITIONAL = 7;
-	const RECORD_TYPE_FINAL = 999;
-	
-	// public $writer = '@(#) SPSS DATA FILE MS Windows 17.0.0';
-	public $writer = '@(#) FOM SPSS 1.0.0'; // 60 bytes max
-	public $fileLabel = ''; // 64 bytes max
-	public $release = array(1,0,0); // 64 bytes max
+
+	/**
+	 * @var string File header (max 60 symbols)
+	 */
+	public $header = '@(#) SPSS DATA FILE';
+
+	/**
+	 * @var string File label (max 64 symbols)
+	 */
+	public $fileLabel = '';
+
+	/**
+	 * @var array Release version (major, minor, special)
+	 */
+	public $release = array(1,1,0); // 64 bytes max
+
+	/**
+	 * @var string Charset
+	 */
 	public $charset = 'windows-1251';
-	public $compression = 0; // compression bias
-	public $numberOfCases = 1;
+
+	/**
+	 * @var integer Compression Bias (0 - uncompess)
+	 */
+	public $compression = 0;
+
+	/**
+	 * @var integer Number of cases
+	 */
+	public $numberOfCases = -1;
+
+	/**
+	 * @var integer System machine code
+	 */
 	public $machineCode = 720;
-	public $sysmis = -0x1fffffffffffff * 2.0**971;
-	// public $sysmis = -1.79769313486E+308; // sysmis
+
+	/**
+	 * @var integer System missing value
+	 */
+	public $sysmis = -1.7976931348623E+308;
+
+	/**
+	 * @var array Variables list
+	 */
 	public $variables = array();
+
+	/**
+	 * @var array Documents list
+	 */
 	public $documents = array();
-	
-	private $bytes = ''; // bytes raw
-	
+
+	/**
+	 * @var integer Creation timestamp
+	 */
+	public $timestamp;
+
+	/**
+	 * {@inheritdoc}
+	 * @return string bytes
+	 */
 	public function make()
 	{
 		if (!$this->variables) {
 			throw new SPSSException('Variables data is empty');
 		}
-		
-		// header
-		$this->bytes .= $this->_header();
-		
-		// variables record
+		$bytes = $this->_header();
 		foreach($this->variables as $var) {
-			$this->bytes .= $this->_variableRecord($var);
+			$bytes .= $this->_variableRecord($var);
 		}
-		
-		// value labels record
 		foreach($this->variables as $var) {
-			$this->bytes .= $this->_valueLabelRecord($var);
+			$bytes .= $this->_valueLabelRecord($var);
 		}
-		
-		// documents record
-		$this->bytes .= $this->_documentsRecord();
-		
-		// additional record
-		$this->bytes .= $this->_additionalRecord();
-		
-		// final record
-		$this->bytes .= $this->_finalRecord();
-		
-		// data
-		$this->bytes .= $this->_data();
+		$bytes .= $this->_documentsRecord();
+		$bytes .= $this->_additionalRecord();
+		$bytes .= $this->_dataRecord();
+		return $bytes;
 	}
-	
+
 	/**
 	 * Save bytes to file
 	 * 
 	 * @param string $filename
-	 * @return string
+	 * @return void
 	 */
 	public function save($filename=null)
 	{
@@ -79,110 +102,127 @@ class SPSSWriter
 			$filename = time() . '.sav';
 		}
 		if ($fp = fopen($filename, 'wb+')) {
-			fwrite($fp, $this->bytes);
+			fwrite($fp, $this->make());
 			fclose($fp);
 		}
 	}
-	
-	/**
-	 * Get bytes raw data
-	 * 
-	 * @return string
-	 */
-	public function getBytes()
-	{
-		return $this->bytes;
-	}
-	
+
 	/**
 	 * Make header information
-	 * @return string
+	 * 
+	 * @return string bytes
 	 */
 	private function _header()
 	{
+		if (!$this->timestamp) {
+			$this->timestamp = time();
+		}
 		$bytes = '';
 		$bytes .= pack('a4', self::FILE_SIGNATURE);
-		$bytes .= pack('A60', $this->writer); // identification
+		$bytes .= pack('A60', substr($this->header, 0, 60)); // identification
 		$bytes .= pack('i', 2); // layoutCode
 		$bytes .= pack('i', count($this->variables)); // numberOfVariables
 		$bytes .= pack('i', (int) !empty($this->compression)); // compressionSwitch
 		$bytes .= pack('i', 0); // caseWeightVariable
 		$bytes .= pack('i', $this->numberOfCases); // numberOfCases
 		$bytes .= pack('d', $this->compression); // compressionBias
-		$bytes .= pack('a9', date('d M y')); // creation date
-		$bytes .= pack('a8', date('H:i:s')); // creation time
-		$bytes .= pack('A64', $this->fixstr($this->fileLabel)); // file label
+		$bytes .= pack('a9', date('d M y', $this->timestamp)); // creation date
+		$bytes .= pack('a8', date('H:i:s', $this->timestamp)); // creation time
+		$bytes .= pack('A64', substr($this->encodeStr($this->fileLabel), 0, 64)); // file label
 		$bytes .= pack('x3'); // padding
 		return $bytes;
 	}
-	
+
 	/**
-	 * Make variable (Record type 2)
+	 * SPSS Record Type 2 - Variable
+	 * 
+	 * @param SPSSVariable $var
 	 * @return string
 	 */
 	private function _variableRecord(SPSSVariable $var)
 	{
-		$hasLabel = (int) !empty($var->label);
+		$shortName = substr($this->encodeStr($var->shortName), 0, 8);
+		$width = $var->typeCode;
+		$isLabeled = !empty($var->label);
+		$isVeryLong = self::isVeryLong($width);
 		
 		$bytes = '';
-		$bytes .= pack('i', self::RECORD_TYPE_VARIABLE); // type variable
-		$bytes .= pack('i', $var->typeCode); // typeCode
-		$bytes .= pack('i', $hasLabel); // hasLabel
+		$bytes .= pack('i', self::RECORD_TYPE_VARIABLE);
+		$bytes .= pack('i', $isVeryLong ? self::REAL_VLS_CHUNK : $width); // width
+		$bytes .= pack('i', (int) $isLabeled); // has label?
 		$bytes .= pack('i', $var->missingValueFormatCode); // missingValueFormatCode (-3 to 3)
 		$bytes .= pack('i', $var->printFormatCode); // printFormatCode
 		$bytes .= pack('i', $var->writeFormatCode); // writeFormatCode
-		$bytes .= pack('A8', $this->fixstr($var->shortName)); // shortName
-		
-		// has labels
-		if ($hasLabel) {
-			$label = $this->fixstr($var->label);
-			$labelLength = strlen($var->label);
-			// variableRecord labels are stored in chunks of 4-bytes
-			// --> we need to skip unused bytes in the last chunk
-			$skipBytes = 0;
-			if ($labelLength % 4 != 0) {
-				$skipBytes = 4 - ($labelLength % 4);
-			}
+		$bytes .= pack('A8', $shortName); // shortName
+
+		if ($isLabeled) {
+			$label = $this->encodeStr($var->label);
+			$labelLength = strlen($label);
 			$bytes .= pack('i', $labelLength); // label length
-			$bytes .= pack('A'.($labelLength+$skipBytes), $label); // label
+			$bytes .= pack('A'.self::roundUp($labelLength, 4), $label); // label
 		}
-		// missing values
+
 		if ($var->missingValues) {
 			foreach($var->missingValues as $key => $val) {
 				$bytes .= pack('d', $val);
 			}
 		}
+
+		if ($width > 0) {
+			$bytes .= $this->_variableContinuationRecord($width);
+		}
 		
-		// padding
-		if ($var->typeCode > 0) {
-			for($k = 8; $k < $var->typeCode; $k += 8) {
-				$fcode = self::toInt(array(1, 29, 1, 0));
-				$bytes .= pack('i6', 2, -1, 0, 0, $fcode, $fcode);
-				$bytes .= '        ';
+		// Write additional segments for very long string variables.
+		if ($isVeryLong) {
+			$segmentsCount = ceil($width/self::REAL_VLS_CHUNK);
+			for ($i=1;$i<$segmentsCount;$i++) {
+				$segmentWidth = min($width - ($i * self::REAL_VLS_CHUNK), self::REAL_VLS_CHUNK);
+				$segmentFormat = self::toInt(array(SPSSVariable::FORMAT_TYPE_A, max($segmentWidth, 1), 0, 0));
+				$bytes .= pack('i', self::RECORD_TYPE_VARIABLE);
+				$bytes .= pack('i', $segmentWidth);
+				$bytes .= pack('i', 0);
+				$bytes .= pack('i', 0);
+				$bytes .= pack('i', $segmentFormat);
+				$bytes .= pack('i', $segmentFormat);
+				$bytes .= pack('A8', substr($shortName, 0, -strlen($i)) . $i);
+				$bytes .= $this->_variableContinuationRecord($segmentWidth);
 			}
 		}
 		
 		return $bytes;
 	}
-	
+
 	/**
-	 * Make value labels (Record type 3,4)
+	 * @param integer $width
+	 * @return string
+	 */
+	private function _variableContinuationRecord($width)
+	{
+		$bytes = '';
+		for ($i = 8; $i < $width; $i += 8) {
+			$bytes .= pack('i6', 2, -1, 0, 0, 0, 0);
+			$bytes .= '00000000';
+		}
+		return $bytes;
+	}
+
+	/**
+	 * SPSS Record Type 3|4 - Value labels | Indexes
+	 * 
+	 * @param SPSSVariable $var
 	 * @return string
 	 */
 	private function _valueLabelRecord(SPSSVariable $var)
 	{
-		$index = $this->getVarIndex($var);
-		
 		if (!$var->valueLabels) {
 			return;
 		}
-		
 		$bytes = '';
 		$bytes .= pack('i', self::RECORD_TYPE_VALUE_LABELS); 
 		$bytes .= pack('i', count($var->valueLabels)); // number of labels
 		foreach($var->valueLabels as $key => $val) {
-			$label = $this->fixstr($val);
-			$labelLength = strlen($val);
+			$label = $this->encodeStr($val);
+			$labelLength = strlen($label);
 			if ($labelLength>255) {
 				$labelLength = 255;
 			}
@@ -194,34 +234,16 @@ class SPSSWriter
 			$bytes .= chr($labelLength);
 			$bytes .= pack('A'.($labelLength+$skipBytes), $label);
 		}
-		
 		// record type 4 (value labels index)
 		$bytes .= pack('i', self::RECORD_TYPE_VALUE_LABELS_INDEX);
 		$bytes .= pack('i', 1);
-		$bytes .= pack('i', $index);
-		
+		$bytes .= pack('i', $this->getVarIndex($var));
 		return $bytes;
 	}
-	
+
 	/**
-	 * @param SPSSVariable $var
-	 * @return integer
-	 */
-	public function getVarIndex($var)
-	{
-		static $index;
-		// todo: get index by other typecodes
-		if ($var->typeCode>0) {
-			$index += ceil($var->getWidth()/8);
-		}
-		else {
-			$index++;
-		}
-		return $index;
-	}
-	
-	/**
-	 * Make documents (Record type 6)
+	 * SPSS Record Type 6 - Documents
+	 * 
 	 * @return string bytes
 	 */
 	private function _documentsRecord()
@@ -232,29 +254,32 @@ class SPSSWriter
 		$bytes = pack('i', self::RECORD_TYPE_DOCUMENTS);
 		$bytes .= pack('i', count($this->documents));
 		foreach($this->documents as $line) {
-			$bytes .= pack('A80', $this->fixstr($line)); // document line 80 bytes max
+			$bytes .= pack('A80', $this->encodeStr($line)); // document line 80 bytes max
 		}
 		return $bytes;
 	}
-	
+
 	/**
-	 * Make additional (Record type 7)
+	 * SPSS Record Type 7 - Additional information
+	 * 
 	 * @return string bytes
 	 */
 	private function _additionalRecord()
 	{
 		$bytes = $this->_additional7_3(); // source system characteristics
 		$bytes .= $this->_additional7_4(); // machine specific "float" type information.
+		// $bytes .= $this->_additional7_5(); // variable sets
 		$bytes .= $this->_additional7_11(); // variable params
 		$bytes .= $this->_additional7_13(); // extended names
+		$bytes .= $this->_additional7_14(); // extended names
 		$bytes .= $this->_additional7_16(); // number of cases
 		$bytes .= $this->_additional7_20(); // charset
-		
 		return $bytes;
 	}
 	
 	/**
 	 * SPSS Record Type 7 Subtype 3 - Source system characteristics
+	 * 
 	 * @return string bytes
 	 */
 	private function _additional7_3()
@@ -268,34 +293,65 @@ class SPSSWriter
 		$bytes .= pack('i', $this->release[1]); // releaseMinor
 		$bytes .= pack('i', $this->release[2]); // releaseSpecial
 		$bytes .= pack('i', $this->machineCode); // machineCode
-		$bytes .= pack('i', 1); // floatRepresentation
-		$bytes .= pack('i', 1); // compressionScheme
+		/**
+		  if (FLOAT_NATIVE_64_BIT == FLOAT_IEEE_DOUBLE_LE || FLOAT_NATIVE_64_BIT == FLOAT_IEEE_DOUBLE_BE)
+			float_format = 1;
+		  else if (FLOAT_NATIVE_64_BIT == FLOAT_Z_LONG)
+			float_format = 2;
+		  else if (FLOAT_NATIVE_64_BIT == FLOAT_VAX_D)
+			float_format = 3;
+		*/
+		$bytes .= pack('i', 1); // floatRepresentation (1,2,3)
+		$bytes .= pack('i', 1); // compression code
 		$bytes .= pack('i', 2); // endianCode (Little-endian)
-		$bytes .= pack('i', 1251); // characterRepresentation (7-bit ASCII)
-		
+		// $bytes .= pack('i', 1251); // characterRepresentation (7-bit ASCII)
+		/*
+		Default to "7-bit ASCII" if the codepage number is unknown,
+		because many files use this codepage number regardless
+		of their actual encoding.
+		*/
+		$bytes .= pack('i', 2);
 		return $bytes;
 	}
-	
+
 	/**
-	 * SPSS Record Type 7 Subtype 4 - Release and machine specific "float" type information. Added in SPSS release 4.0
+	 * SPSS Record Type 7 Subtype 4 - Release and machine specific "float" type information
+	 * Added in SPSS release 4.0
+	 * 
 	 * @return string bytes
 	 */
 	private function _additional7_4()
 	{
 		$bytes = '';
 		$bytes .= pack('i', self::RECORD_TYPE_ADDITIONAL);
-		$bytes .= pack('i', 4);
-		$bytes .= pack('i', 8);
-		$bytes .= pack('i', 3);
-		$bytes .= pack('d', $this->sysmis); // system missing value
-		$bytes .= pack('d', -$this->sysmis); // value for HIGHEST in missing values and recode
-		$bytes .= pack('d', $this->sysmis); // value for LOWEST in missing values and recode
-		
+		$bytes .= pack('i', 4); // Record subtype.
+		$bytes .= pack('i', 8); // Data item (flt64) size.
+		$bytes .= pack('i', 3); // Number of data items.
+		$bytes .= pack('d', $this->sysmis); // System-missing value.
+		$bytes .= pack('d', -$this->sysmis); // Value used for HIGHEST in missing values.
+		$bytes .= pack('d', $this->sysmis); // Value used for LOWEST in missing values.
+		return $bytes;
+	}
+
+	/**
+	 * SPSS Record Type 7 Subtype 5 -  Variable sets information
+	 * 
+	 * @return string bytes
+	 */
+	private function _additional7_5()
+	{
+		$bytes = '';
+		$bytes .= pack('i', self::RECORD_TYPE_ADDITIONAL);
+		$bytes .= pack('i', 5);
+		$bytes .= pack('i', 1);
+		$bytes .= pack('i', 0);
+		$bytes .= pack('a', '');
 		return $bytes;
 	}
 	
 	/**
-	 * SPSS Record Type 7 Subtype 11 - Variable params
+	 * SPSS Record Type 7 Subtype 11 - Variable display parameters
+	 * 
 	 * @return string bytes
 	 */
 	private function _additional7_11()
@@ -303,19 +359,19 @@ class SPSSWriter
 		$bytes = '';
 		$bytes .= pack('i', self::RECORD_TYPE_ADDITIONAL);
 		$bytes .= pack('i', 11);
-		$bytes .= pack('i', 4); // size
-		$bytes .= pack('i', count($this->variables) * 3); // count
+		$bytes .= pack('i', 4); // data element length
+		$bytes .= pack('i', count($this->variables) * 3); // number of data elements
 		foreach($this->variables as $var) {
 			$bytes .= pack('i', $var->measure);
-			$bytes .= pack('i', $var->width);
+			$bytes .= pack('i', $var->columns);
 			$bytes .= pack('i', $var->alignment);
 		}
-		
 		return $bytes;
 	}
 
 	/**
-	 * SPSS Record Type 7 Subtype 13 - Variable extended names
+	 * SPSS Record Type 7 Subtype 13 - Long variable names
+	 * 
 	 * @return string bytes
 	 */
 	private function _additional7_13()
@@ -323,21 +379,53 @@ class SPSSWriter
 		$bytes = '';
 		$bytes .= pack('i', self::RECORD_TYPE_ADDITIONAL);
 		$bytes .= pack('i', 13);
-		$bytes .= pack('i', 1); // size
+		$bytes .= pack('i', 1); // data element length
 		$data = array();
 		foreach($this->variables as $var) {
 			$data[] = $var->shortName.'='.(!empty($var->name) ? $var->name : $var->shortName);
 		}
 		$data = implode("\t", $data);
 		$datalen = strlen($data);
-		$bytes .= pack('i', $datalen); // count
-		$bytes .= pack('a'.$datalen, $this->fixstr($data));
-		
+		$bytes .= pack('i', $datalen); // number of data elements
+		$bytes .= pack('a'.$datalen, $this->encodeStr($data));
+		return $bytes;
+	}
+
+	/**
+	 * SPSS Record Type 7 Subtype 14 - Long variable value
+	 * 
+	 * @return string bytes
+	 */
+	private function _additional7_14()
+	{
+		$bytes = '';
+		$bytes .= pack('i', self::RECORD_TYPE_ADDITIONAL);
+		$bytes .= pack('i', 14);
+		$bytes .= pack('i', 1); // data element length
+		$data = array();
+		foreach($this->variables as $var) {
+			
+			// @TODO
+			
+			// $width = $var->getWidth();
+			// $segmentsCount = ceil($width/self::REAL_VLS_CHUNK);
+			// for ($i=1;$i<$segmentsCount;$i++) {
+				// $segmentWidth = min($width - ($i * self::REAL_VLS_CHUNK), self::REAL_VLS_CHUNK);
+				// $shortName = substr($var->shortName, 0, -strlen($i)) . $i;
+				// $data[] = $shortName.'='.substr();
+			// }
+			
+		}
+		$data = implode("\t", $data);
+		$datalen = strlen($data);
+		$bytes .= pack('i', $datalen); // number of data elements
+		$bytes .= pack('a'.$datalen, $this->encodeStr($data));
 		return $bytes;
 	}
 
 	/**
 	 * SPSS Record Type 7 Subtype 16 - Number of cases
+	 * 
 	 * @return string bytes
 	 */
 	private function _additional7_16()
@@ -345,17 +433,17 @@ class SPSSWriter
 		$bytes = '';
 		$bytes .= pack('i', self::RECORD_TYPE_ADDITIONAL);
 		$bytes .= pack('i', 16);
-		$bytes .= pack('i', 8); // size
-		$bytes .= pack('i', 2); // count
+		$bytes .= pack('i', 8); // data element length
+		$bytes .= pack('i', 2); // number of data elements
 		$bytes .= pack('i', 1); // byte order
 		$bytes .= pack('i', 0); 
-		$bytes .= pack('d', 0); // count
-		
+		$bytes .= pack('d', 0);
 		return $bytes;
 	}
 
 	/**
 	 * SPSS Record Type 7 Subtype 20 - Charset
+	 * 
 	 * @return string bytes
 	 */
 	private function _additional7_20()
@@ -363,64 +451,65 @@ class SPSSWriter
 		$bytes = '';
 		$bytes .= pack('i', self::RECORD_TYPE_ADDITIONAL);
 		$bytes .= pack('i', 20);
-		$bytes .= pack('i', 1); // size
-		
-		$bytes .= pack('i', strlen($this->charset)); // count
+		$bytes .= pack('i', 1); // data element length
+		$bytes .= pack('i', strlen($this->charset)); // number of data elements
 		$bytes .= pack('a*', $this->charset);
-		
 		return $bytes;
 	}
-	
+
 	/**
-	 * Make final (Record type 999)
+	 * SPSS Record Type 999 - Data record
+	 * 
 	 * @return string bytes
 	 */
-	private function _finalRecord()
+	private function _dataRecord()
 	{
-		$bytes = pack('i', self::RECORD_TYPE_FINAL);
-		$bytes .= pack('i', 0);
-		return $bytes;
-	}
-	
-	/**
-	 * Make data
-	 * @return string bytes
-	 */
-	private function _data()
-	{
-		$bytes = '';
+		$bytes = pack('i2', self::RECORD_TYPE_FINAL, 0);
 		for($i=0;$i<$this->numberOfCases;$i++) {
-			foreach($this->variables as $key => $var) {
-				$varType = $var->getType();
+			foreach($this->variables as $var) {
+				$type = $var->getType();
 				$value = isset($var->data[$i]) ? $var->data[$i] : null;
 				if ($this->compression) {
 					// @todo
 				}
 				else {
-					if ($varType==SPSSVariable::TYPE_NUMERIC) {
+					if ($type==SPSSVariable::TYPE_NUMERIC) {
 						$bytes .= pack('d', $value);
 					}
 					else {
-						$bytes .= pack('a'.$var->typeCode, $this->fixstr($value));
-						$skipBytes = 0;
-						if ($var->typeCode % 8){
-							$skipBytes = 8 - ($var->typeCode % 8);
-						}
-						$bytes .= pack('x'.$skipBytes);
+						$width = $var->getWidth();
+						$bytes .= pack('A'.$width, $value);
 					}
 				}
 			}
 		}
 		return $bytes;
 	}
-	
+
+	/**
+	 * Get variable index
+	 * 
+	 * @param SPSSVariable $var
+	 * @return integer
+	 */
+	public function getVarIndex($var)
+	{
+		static $index;
+		if ($var->typeCode>0) {
+			$index += ceil($var->getWidth()/8);
+		} else {
+			$index++;
+		}
+		return $index;
+	}
+
 	/**
 	 * Fix string charset
 	 * 
 	 * @params string $str
 	 * @return string
 	 */
-	private function fixstr($str)
+	private function encodeStr($str)
 	{
 		if ($this->charset !='utf-8') {
 			$str = iconv('utf-8', $this->charset, $str);
@@ -428,14 +517,4 @@ class SPSSWriter
 		return $str;
 	}
 	
-	/**
-	 * Convert bytes array to integer
-	 * 
-	 * @params array $bytes
-	 * @return integer
-	 */
-	public static function toInt($bytes)
-	{
-		return $bytes[3]<<24 | $bytes[2]<<16 | $bytes[1]<<8 | $bytes[0]<<0;
-	}
 }

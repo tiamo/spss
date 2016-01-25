@@ -1,5 +1,4 @@
 <?php
-header('Content-type:text/html;charset=cp1251');
 
 require 'SPSSReader.php';
 $SPSS = new SPSSReader('data.sav');
@@ -40,12 +39,7 @@ $SPSS = new SPSSReader('data.sav');
 	<tr>
 		<td><?=$i?></td>
 		<td><?=isset($SPSS->extendedNames[$var->shortName]) ? $SPSS->extendedNames[$var->shortName] : $var->name?></td>
-		<td>
-			<?php
-				$type = $var->getPrintFormat();
-				echo $type[0];
-			?>
-		</td>
+		<td><?= implode(',', $var->getPrintFormat()) ?> (#<?= $var->typeCode ?>)</td>
 		<td><?=$var->getWidth()?></td>
 		<td><?=$var->getDecimals()?></td>
 		<td><?=$var->getLabel()?></td>

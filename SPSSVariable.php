@@ -4,7 +4,7 @@ class SPSSVariable
 {
 	const TYPE_NUMERIC			= 1;
 	const TYPE_STRING			= 2;
-	
+
 	const FORMAT_TYPE_A			= 1;
 	const FORMAT_TYPE_AHEX		= 2;
 	const FORMAT_TYPE_COMMA		= 3;
@@ -40,74 +40,157 @@ class SPSSVariable
 	const FORMAT_TYPE_CCE		= 37;
 	const FORMAT_TYPE_EDATE		= 38;
 	const FORMAT_TYPE_SDATE		= 39;
-	
-	public $typeCode = -1; // default is continue var code
-	public $shortName; // < The short variable name (8 characters max)
-	public $name; // < The full variable name
+
+	/**
+	 * @var integer Default is continue var code
+	 */
+	public $typeCode = -1;
+
+	/**
+	 * @var string The short variable name (8 characters max)
+	 */
+	public $shortName;
+
+	/**
+	 * @var string The full variable name
+	 */
+	public $name;
+
+	/**
+	 * @var string
+	 */
 	public $label;
+
+	/**
+	 * @var integer
+	 */
 	public $missingValueFormatCode;
+
+	/**
+	 * @var array
+	 */
 	public $missingValues=array();
+
+	/**
+	 * @var integer
+	 */
 	public $printFormatCode;
+
+	/**
+	 * @var integer
+	 */
 	public $writeFormatCode;
+
+	/**
+	 * @var array
+	 */
 	public $valueLabels=array();
+
+	/**
+	 * @var integer 1=nominal, 2=ordinal, 3=scale (copied from record type 7 subtype 11)
+	 */
+	public $measure = -1;
+
+	/**
+	 * @var integer Display width (copied from record type 7 subtype 11)
+	 */
+	public $columns = -1;
+
+	/**
+	 * @var integer 0=left 1=right, 2=center (copied from record type 7 subtype 11)
+	 */
+	public $alignment = -1;
+
+	/**
+	 * @var array
+	 */
+	public $data = array();
+	
+	// @todo: remove
 	public $extendedStringVars = array();
 	public $extendedStringLength = 0;
 	public $isExtended = 0;
-	public $measure = -1; // < 1=nominal, 2=ordinal, 3=scale (copied from record type 7 subtype 11) */
-	public $width = -1; // < display width (copied from record type 7 subtype 11) */
-	public $alignment = -1; // < 0=left 1=right, 2=center (copied from record type 7 subtype 11) */
-	public $data = array();
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getPrintFormat()
 	{
 		return self::getFormatInfo($this->getPrintFormatType());
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getPrintFormatDecimals()
 	{
 		return ($this->printFormatCode >> 0) & 0xFF; // byte 1
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getPrintFormatWidth()
 	{
 		return ($this->printFormatCode >> 8) & 0xFF; // byte 2
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getPrintFormatType()
 	{
 		return ($this->printFormatCode >> 16) & 0xFF; // byte 3
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getPrintFormatZero()
 	{
 		return ($this->printFormatCode >> 24) & 0xFF; // byte 4
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getWriteFormat()
 	{
 		return self::getFormatInfo($this->getWriteFormatType());
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getWriteFormatDecimals()
 	{
 		return ($this->writeFormatCode >> 0) & 0xFF; // byte 1
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getWriteFormatWidth()
 	{
 		return ($this->writeFormatCode >> 8) & 0xFF; // byte 2
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getWriteFormatType()
 	{
 		return ($this->writeFormatCode >> 16) & 0xFF; // byte 3
 	}
-	
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function getWriteFormatZero()
 	{
 		return ($this->writeFormatCode >> 24) & 0xFF; // byte 4
 	}
-	
+
 	/**
 	 * @return A integer containing the kind of type
 	 */
@@ -120,15 +203,7 @@ class SPSSVariable
 			return self::TYPE_STRING;
 		}
 	}
-	
-	/**
-	 * @return A string containing the variable name (empty if no label is available)
-	 */
-	public function getLabel()
-	{
-		return $this->label;
-	}
-	
+
 	/**
 	 * @return A string containing the kind of type
 	 */
@@ -136,7 +211,15 @@ class SPSSVariable
 	{
 		return $this->typeCode==0 ? 'Numeric' : 'String';
 	}
-	
+
+	/**
+	 * @return A string containing the variable name (empty if no label is available)
+	 */
+	public function getLabel()
+	{
+		return $this->label;
+	}
+
 	/**
 	 * @return A string containing the kind of missing values
 	 */
@@ -144,7 +227,7 @@ class SPSSVariable
 	{
 		return $this->missingValues ? implode(', ', $this->missingValues) : 'None';
 	}
-	
+
 	/**
 	 * @return A string containing the kind of width
 	 */
@@ -158,7 +241,7 @@ class SPSSVariable
 		}
 		return $width;
 	}
-	
+
 	/**
 	 * Retrieves the SPSS write format number of decimals.
 	 * 
@@ -168,55 +251,39 @@ class SPSSVariable
 	{
 		return $this->getWriteFormatDecimals();
 	}
-	
+
 	/**
 	 * @return A string containing the kind of measure
 	 */
 	public function getAlignmentLabel()
 	{
-		$label = "";
 		switch ($this->alignment) {
-		case 0:
-			$label = "Left";
-			break;
-		case 1:
-			$label = "Center";
-			$break;
-		case 2:
-			$label = "Right";
-			break;
+			case 0: return 'Left';
+			case 1: return 'Center';
+			case 2: return 'Right';
 		}
-		return $label;
 	}
-	
+
 	/**
 	 * @return A string containing the kind of measure
 	 */
 	public function getMeasureLabel()
 	{
-		$label = "";
 		switch ($this->measure) {
-		case 1:
-			$label = "Nominal";
-			break;
-		case 2:
-			$label = "Ordinal";
-			break;
-		case 3:
-			$label = "Scale";
-			break;
+			case 1: return 'Nominal';
+			case 2: return 'Ordinal';
+			case 3: return 'Scale';
 		}
-		return $label;
 	}
-	
+
 	/**
 	 * @return A string containing the kind of columns
 	 */
 	public function getColumns()
 	{
-		return $this->width;
+		return $this->columns;
 	}
-	
+
 	/**
 	 * This method returns the print / write format code of a variable. The 
 	 * returned value is a tuple consisting of the format abbreviation 
@@ -268,7 +335,7 @@ class SPSSVariable
 			default: return array(null, null);
 		}
 	}
-	
+
 	/**
 	 * Check is date format
 	 * 

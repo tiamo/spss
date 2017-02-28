@@ -14,6 +14,7 @@ use SPSS\Sav\Record;
 class ValueLabel extends Record
 {
     const TYPE = 3;
+    const LABEL_MAX_LENGTH = 255;
 
     /**
      * @var array
@@ -36,7 +37,9 @@ class ValueLabel extends Record
         /** @var int $labelCount Number of value labels present in this record. */
         $labelCount = $buffer->readInt();
         for ($i = 0; $i < $labelCount; $i++) {
-            $value = $buffer->readString(8);
+            // A numeric value or a short string value padded as necessary to 8 bytes in length.
+            // TODO: short string (width <= 8)
+            $value = strval($buffer->readDouble());
             $labelLength = ord($buffer->read(1));
             $label = $buffer->readString(Buffer::roundUp($labelLength + 1, 8) - 1);
             $this->data[$value] = $label;
@@ -65,7 +68,7 @@ class ValueLabel extends Record
         $buffer->writeInt(self::TYPE);
         $buffer->writeInt(count($this->data));
         foreach ($this->data as $value => $label) {
-            $labelLength = min(strlen($label), 255);
+            $labelLength = min(strlen($label), self::LABEL_MAX_LENGTH);
             $buffer->writeString($value, 8);
             $buffer->write(chr($labelLength));
             $buffer->writeString($label, Buffer::roundUp($labelLength + 1, 8) - 1);

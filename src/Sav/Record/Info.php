@@ -8,23 +8,25 @@ use SPSS\Sav\Record;
 class Info extends Record
 {
     const TYPE = 7;
+    const SUBTYPE = 0;
 
     /**
-     * @var int
+     * @var int Size of each piece of data in the data part, in bytes
      */
-    public $dataSize = 1;
+    protected $dataSize = 1;
 
     /**
-     * @var int
+     * @var int Number of pieces of data in the data part
      */
-    public $dataCount = 0;
+    protected $dataCount = 0;
 
     /**
      * @param Buffer $buffer
      */
     public function read(Buffer $buffer)
     {
-        // TODO: Implement read() method.
+        $this->dataSize = $buffer->readInt();
+        $this->dataCount = $buffer->readInt();
     }
 
     /**
@@ -32,6 +34,7 @@ class Info extends Record
      */
     public function write(Buffer $buffer)
     {
-        // TODO: Implement write() method.
+        $buffer->writeInt(self::TYPE);
+        $buffer->writeInt(self::SUBTYPE);
     }
 }

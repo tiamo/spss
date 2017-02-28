@@ -3,6 +3,8 @@
 namespace SPSS\Sav;
 
 use SPSS\Buffer;
+use SPSS\Exception;
+use SPSS\Sav\Record\Data;
 use SPSS\Sav\Record\Document;
 use SPSS\Sav\Record\Header;
 use SPSS\Sav\Record\Info;
@@ -11,11 +13,6 @@ use SPSS\Sav\Record\Variable;
 
 class Reader
 {
-    /**
-     * @var Buffer
-     */
-    protected $buffer;
-
     /**
      * @var Header
      */
@@ -37,15 +34,22 @@ class Reader
     public $documents = [];
 
     /**
+     * @var array
+     */
+    public $info = [];
+
+    /**
      * Reader constructor.
      * @param Buffer $buffer
+     * @throws Exception
      */
     private function __construct(Buffer $buffer)
     {
+        $buffer->context = $this;
         $this->header = Header::fill($buffer);
 
         do {
-            $recType = $this->buffer->readInt();
+            $recType = $buffer->readInt();
             switch ($recType) {
                 case Variable::TYPE:
                     $this->variables[] = Variable::fill($buffer);
@@ -57,19 +61,49 @@ class Reader
                     $this->documents = Document::fill($buffer)->lines;
                     break;
                 case Info::TYPE:
-
                     $subtype = $buffer->readInt();
-
-                    print_r($this);
-                    exit;
-
-                    break;
-                default:
+                    switch ($subtype) {
+                        case Info\MachineInteger::SUBTYPE:
+                            $this->info[$subtype] = Info\MachineInteger::fill($buffer);
+                            break;
+                        case Info\MachineFloatingPoint::SUBTYPE:
+                            $this->info[$subtype] = Info\MachineFloatingPoint::fill($buffer);
+                            break;
+                        case Info\VariableDisplayParam::SUBTYPE:
+                            $this->info[$subtype] = Info\VariableDisplayParam::fill($buffer);
+                            break;
+                        case Info\LongVariableNames::SUBTYPE:
+                            $this->info[$subtype] = Info\LongVariableNames::fill($buffer);
+                            break;
+                        case Info\VeryLongString::SUBTYPE:
+                            $this->info[$subtype] = Info\VeryLongString::fill($buffer);
+                            break;
+                        case Info\ExtendedNumberOfCases::SUBTYPE:
+                            $this->info[$subtype] = Info\ExtendedNumberOfCases::fill($buffer);
+                            break;
+                        case Info\VariableAttributes::SUBTYPE:
+                            $this->info[$subtype] = Info\VariableAttributes::fill($buffer);
+                            break;
+                        case Info\VariableRoles::SUBTYPE:
+                            $this->info[$subtype] = Info\VariableRoles::fill($buffer);
+                            break;
+                        case Info\CharacterEncoding::SUBTYPE:
+                            $this->info[$subtype] = Info\CharacterEncoding::fill($buffer);
+                            break;
+                        case Info\LongStringValueLabels::SUBTYPE:
+                            $this->info[$subtype] = Info\LongStringValueLabels::fill($buffer);
+                            break;
+                        case Info\LongStringMissingValues::SUBTYPE:
+                            $this->info[$subtype] = Info\LongStringMissingValues::fill($buffer);
+                            break;
+                        default:
+                            $this->info[$subtype] = Info\Unknown::fill($buffer);
+                    }
                     break;
             }
         } while ($recType != 999);
 
-        // TODO: read data matrix
+        Data::fill($buffer);
 
         print_r($this);
     }

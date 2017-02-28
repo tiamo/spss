@@ -5,6 +5,11 @@ namespace SPSS;
 class Buffer
 {
     /**
+     * @var mixed
+     */
+    public $context;
+
+    /**
      * @var bool
      */
     public $isBigEndian = false;

@@ -106,7 +106,7 @@ class Header extends Record
     {
         $this->recType = $buffer->readString(4);
         if (!($this->recType == self::NORMAL_REC_TYPE || $this->recType == self::ZLIB_REC_TYPE)) {
-            throw new Exception('Error signature'); // TODO
+            throw new Exception('Read header error: this is not a valid SPSS file. Does not start with $FL2 or $FL3.');
         }
         $this->prodName = trim($buffer->readString(60));
         $this->layoutCode = $buffer->readInt();

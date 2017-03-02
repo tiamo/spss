@@ -34,9 +34,14 @@ class Reader
     public $documents = [];
 
     /**
-     * @var array
+     * @var Info[]
      */
     public $info = [];
+
+    /**
+     * @var array Data matrix
+     */
+    public $data = [];
 
     /**
      * Reader constructor.
@@ -101,11 +106,9 @@ class Reader
                     }
                     break;
             }
-        } while ($recType != 999);
+        } while ($recType != Data::TYPE);
 
-        Data::fill($buffer);
-
-        print_r($this);
+        $this->data = Data::fill($buffer)->data;
     }
 
     /**

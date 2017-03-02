@@ -7,10 +7,23 @@ date_default_timezone_set('UTC');
 use SPSS\Buffer;
 use SPSS\Sav\Reader;
 
-// test read data
-$reader = Reader::fromFile('tmp/test.sav');
+//$x = 1500;
+//$y = 252;
+//
+//echo ceil($x / $y);
+//echo (($x) + (($y) - 1)) / ($y);
 
-exit;
+
+//for($i = 0; $i< 7; $i++) {
+//    echo \SPSS\Sav\Record\Variable::widthToBytes(1500) . PHP_EOL;
+//}
+//
+//exit;
+
+// test read data
+//$reader = Reader::fromFile('tmp/test.sav');
+//
+//exit;
 
 $buffer = new Buffer();
 

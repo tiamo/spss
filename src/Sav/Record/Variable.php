@@ -15,6 +15,11 @@ class Variable extends Record
     const REAL_VLS_CHUNK = 255;
 
     /**
+     * Number of bytes per segment by which the amount of space for very long string variables is allocated
+     */
+    const EFFECTIVE_VLS_CHUNK = 252;
+
+    /**
      * @var int Variable type code.
      * Set to 0 for a numeric variable.
      * For a short string variable or the first part of a long string variable, this is set to the width of the string.
@@ -101,9 +106,11 @@ class Variable extends Record
      */
     public function write(Buffer $buffer)
     {
+        $width = $this->type;
+        $seg0width = self::segmentAllocWidth($width, 0);
         $hasLabel = !empty($this->label);
         $buffer->writeInt(self::TYPE);
-        $buffer->writeInt(min($this->type, self::REAL_VLS_CHUNK));
+        $buffer->writeInt($seg0width);
         $buffer->writeInt($hasLabel ? 1 : 0);
         $buffer->writeInt($this->missingValuesFormat);
         $buffer->writeInt(Buffer::bytesToInt($this->print));
@@ -119,9 +126,21 @@ class Variable extends Record
                 $buffer->writeDouble($val);
             }
         }
-        $this->writeBlank($buffer, $this->type);
+        $this->writeBlank($buffer, $seg0width);
 
-        // TODO: very long segments
+        if (self::isVeryLong($this->type)) {
+            for ($i = 1; $i < self::widthToSegments($width); $i++) {
+                $segWidth = self::segmentAllocWidth($width, $i);
+                $buffer->writeInt(self::TYPE);
+                $buffer->writeInt($segWidth);
+                $buffer->writeInt(0);
+                $buffer->writeInt(0);
+                $buffer->writeInt(0);
+                $buffer->writeInt(0);
+                $buffer->write(substr($this->name, 0, -strlen($i)) . $i);
+                $this->writeBlank($buffer, $segWidth);
+            }
+        }
     }
 
     /**
@@ -130,7 +149,6 @@ class Variable extends Record
      */
     public function writeBlank(Buffer $buffer, $width)
     {
-        $width = min(self::REAL_VLS_CHUNK, $width);
         for ($i = 8; $i < $width; $i += 8) {
             $buffer->writeInt(self::TYPE);
             $buffer->writeInt(-1);
@@ -145,7 +163,7 @@ class Variable extends Record
     /**
      * @return int
      */
-    public function getPrintDecimals()
+    public function getDecimals()
     {
         return $this->print[0];
     }
@@ -153,7 +171,7 @@ class Variable extends Record
     /**
      * @return int
      */
-    public function getPrintWidth()
+    public function getWidth()
     {
         return $this->print[1];
     }
@@ -161,8 +179,77 @@ class Variable extends Record
     /**
      * @return int
      */
-    public function getPrintFormat()
+    public function getFormat()
     {
         return $this->print[2];
+    }
+
+
+    /**
+     * Returns true if WIDTH is a very long string width, false otherwise.
+     * @param int $width
+     * @return int
+     */
+    public static function isVeryLong($width)
+    {
+        return $width > self::REAL_VLS_CHUNK;
+    }
+
+    /**
+     * Returns the number of bytes of uncompressed case data used for writing a variable of the given WIDTH to a system file.
+     * All required space is included, including trailing padding and internal padding.
+     * @param int $width
+     * @return int
+     */
+    public static function widthToBytes($width)
+    {
+        if ($width == 0) {
+            $bytes = 8;
+        } elseif (!self::isVeryLong($width)) {
+            $bytes = $width;
+        } else {
+            $chunks = $width / self::EFFECTIVE_VLS_CHUNK;
+            $remainder = $width % self::EFFECTIVE_VLS_CHUNK;
+            $bytes = $remainder + ($chunks + Buffer::roundUp(self::REAL_VLS_CHUNK, 8));
+        }
+        return Buffer::roundUp($bytes, 8);
+    }
+
+    /**
+     * Returns the number of 8-byte units (octs) used to write data for a variable of the given WIDTH.
+     * @param int $width
+     * @return int
+     */
+    public static function widthToOcts($width)
+    {
+        return self::widthToBytes($width) / 8;
+    }
+
+    /**
+     * Returns the number of "segments" used for writing case data for a variable of the given WIDTH.
+     * A segment is a physical variable in the system file that represents some piece of a logical variable.
+     * Only very long string variables have more than one segment.
+     * @param int $width
+     * @return int
+     */
+    public static function widthToSegments($width)
+    {
+        return self::isVeryLong($width) ? ceil($width / self::EFFECTIVE_VLS_CHUNK) : 1;
+    }
+
+    /**
+     * Returns the width to allocate to the given SEGMENT within a variable of the given WIDTH.
+     * A segment is a physical variable in the system file that represents some piece of a logical variable.
+     * @param int $width
+     * @param int $segment
+     * @return int
+     */
+    public static function segmentAllocWidth($width, $segment)
+    {
+        return self::isVeryLong($width) ?
+            ($segment < self::widthToSegments($width) - 1 ?
+                self::REAL_VLS_CHUNK :
+                $width - $segment * self::EFFECTIVE_VLS_CHUNK) :
+            $width;
     }
 }

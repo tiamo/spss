@@ -24,7 +24,7 @@ class VeryLongString extends Info
         $data = rtrim($buffer->readString($this->dataSize * $this->dataCount));
         foreach (explode(self::DELIMITER, $data) as $item) {
             list($key, $value) = explode('=', $item);
-            $this->data[$key] = trim($value);
+            $this->data[$key] = intval($value);
         }
     }
 
@@ -35,7 +35,7 @@ class VeryLongString extends Info
     {
         $data = '';
         foreach ($this->data as $key => $value) {
-            $data .= sprintf('%s=%s', $key, $value) . self::DELIMITER;
+            $data .= sprintf('%s=%05d%c', $key, $value, 0) . self::DELIMITER;
         }
         $this->dataCount = strlen($data);
         parent::write($buffer);

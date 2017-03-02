@@ -118,6 +118,19 @@ class Buffer
     }
 
     /**
+     * @param $length
+     * @return false|array
+     */
+    public function readBytes($length)
+    {
+        $bytes = $this->read($length);
+        if ($bytes != false) {
+            return array_values(unpack('C*', $bytes));
+        }
+        return false;
+    }
+
+    /**
      * @param int $length
      * @param int $round
      * @param null $charset
@@ -125,12 +138,11 @@ class Buffer
      */
     public function readString($length, $round = 0, $charset = null)
     {
-        $bytes = $this->read($length);
-        if ($bytes != false) {
+        if ($bytes = $this->readBytes($length)) {
             if ($round) {
                 $this->skip(self::roundUp($length, $round) - $length);
             }
-            $str = self::bytesToString(unpack('C*', $bytes));
+            $str = self::bytesToString($bytes);
             if ($charset) {
                 $str = iconv($charset, 'utf8', $str);
             } elseif ($this->charset) {
@@ -161,7 +173,7 @@ class Buffer
      * @param string $format
      * @return mixed
      */
-    public function readNumeric($length, $format)
+    private function readNumeric($length, $format)
     {
         $bytes = $this->read($length);
         if ($bytes != false) {
@@ -279,6 +291,15 @@ class Buffer
     public function skip($length)
     {
         $this->_position += $length;
+    }
+
+    /**
+     * @param double $num
+     * @return string
+     */
+    public static function doubleToString($num)
+    {
+        return self::bytesToString(unpack('C8', pack('d', $num)));
     }
 
     /**

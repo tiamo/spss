@@ -36,13 +36,16 @@ class ValueLabel extends Record
     {
         /** @var int $labelCount Number of value labels present in this record. */
         $labelCount = $buffer->readInt();
+
         for ($i = 0; $i < $labelCount; $i++) {
             // A numeric value or a short string value padded as necessary to 8 bytes in length.
-            // TODO: short string (width <= 8)
-            $value = strval($buffer->readDouble());
+            $value = $buffer->readDouble();
             $labelLength = ord($buffer->read(1));
             $label = $buffer->readString(Buffer::roundUp($labelLength + 1, 8) - 1);
-            $this->data[$value] = $label;
+            $this->data[] = [
+                'value' => $value,
+                'label' => $label
+            ];
         }
 
         // The value label variables record is always immediately followed after a value label record.
@@ -56,7 +59,7 @@ class ValueLabel extends Record
         // Number of variables that the associated value labels from the value label record are to be applied.
         $varCount = $buffer->readInt();
         for ($i = 0; $i < $varCount; $i++) {
-            $this->vars[] = $buffer->readInt() -1;
+            $this->vars[] = $buffer->readInt() - 1;
         }
     }
 
@@ -67,11 +70,11 @@ class ValueLabel extends Record
     {
         $buffer->writeInt(self::TYPE);
         $buffer->writeInt(count($this->data));
-        foreach ($this->data as $value => $label) {
-            $labelLength = min(strlen($label), self::LABEL_MAX_LENGTH);
-            $buffer->writeString($value, 8);
+        foreach ($this->data as $label) {
+            $labelLength = min(strlen($label[1]), self::LABEL_MAX_LENGTH);
+            $buffer->writeDouble($label[0]);
             $buffer->write(chr($labelLength));
-            $buffer->writeString($label, Buffer::roundUp($labelLength + 1, 8) - 1);
+            $buffer->writeString($label[1], Buffer::roundUp($labelLength + 1, 8) - 1);
         }
         $buffer->writeInt(4);
         $buffer->writeInt(count($this->vars));

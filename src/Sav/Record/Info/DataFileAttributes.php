@@ -6,7 +6,7 @@ use SPSS\Buffer;
 use SPSS\Exception;
 use SPSS\Sav\Record\Info;
 
-class VariableRoles extends Unknown
+class DataFileAttributes extends Unknown
 {
-    const SUBTYPE = 18;
+    const SUBTYPE = 17;
 }

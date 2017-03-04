@@ -17,22 +17,22 @@ class MachineFloatingPoint extends Info
     /**
      * @var double
      */
-    public $highest = 0;
+    public $highest;
 
     /**
      * @var double
      */
-    public $lowest = 0;
-
-    /**
-     * @var int Always set to 4.
-     */
-    protected $dataSize = 4;
+    public $lowest;
 
     /**
      * @var int Always set to 8.
      */
-    protected $dataCount = 8;
+    protected $dataSize = 8;
+
+    /**
+     * @var int Always set to 3.
+     */
+    protected $dataCount = 3;
 
     /**
      * @param Buffer $buffer

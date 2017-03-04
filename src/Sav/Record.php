@@ -12,6 +12,19 @@ abstract class Record
     const TYPE = 0;
 
     /**
+     * Record constructor.
+     * @param array $data
+     */
+    public function __construct($data = [])
+    {
+        foreach ($data as $key => $value) {
+            if (isset($this->{$key})) {
+                $this->{$key} = $value;
+            }
+        }
+    }
+
+    /**
      * @param Buffer $buffer
      * @return static
      */

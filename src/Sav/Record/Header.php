@@ -52,7 +52,7 @@ class Header extends Record
      * 2 if the data is ZLIB compressed.
      * This field has value 2 if and only if recType is ‘$FL3’.
      */
-    public $compression = 0;
+    public $compression = 1;
 
     /**
      * @var int If one of the variables in the data set is used as a weighting variable,
@@ -142,12 +142,13 @@ class Header extends Record
         $buffer->writeString($this->prodName, 60);
         $buffer->writeInt($this->layoutCode);
         $buffer->writeInt($this->nominalCaseSize);
+        $buffer->writeInt($this->compression);
         $buffer->writeInt($this->weightIndex);
         $buffer->writeInt($this->casesCount);
-        $buffer->writeInt($this->bias);
+        $buffer->writeDouble($this->bias);
         $buffer->writeString($this->creationDate, 9);
         $buffer->writeString($this->creationTime, 8);
-        $buffer->writeString($this->fileLabel, 60);
+        $buffer->writeString($this->fileLabel, 64);
         $buffer->writeNull(3);
     }
 }

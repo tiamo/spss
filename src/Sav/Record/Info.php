@@ -5,7 +5,7 @@ namespace SPSS\Sav\Record;
 use SPSS\Buffer;
 use SPSS\Sav\Record;
 
-class Info extends Record
+abstract class Info extends Record
 {
     const TYPE = 7;
     const SUBTYPE = 0;
@@ -35,6 +35,8 @@ class Info extends Record
     public function write(Buffer $buffer)
     {
         $buffer->writeInt(self::TYPE);
-        $buffer->writeInt(self::SUBTYPE);
+        $buffer->writeInt(static::SUBTYPE);
+        $buffer->writeInt($this->dataSize);
+        $buffer->writeInt($this->dataCount);
     }
 }

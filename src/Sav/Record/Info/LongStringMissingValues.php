@@ -25,10 +25,10 @@ class LongStringMissingValues extends Info
             $varName = trim($buffer->readString($varNameLength));
             $count = ord($buffer->read(1));
             $this->data[$varName] = [];
+            $valueLength = $buffer->readInt();
             for ($i = 0; $i < $count; $i++) {
-                $valueLength = $buffer->readInt();
-                $value = trim($buffer->readString($valueLength));
-                $this->data[$varName][] = $value;
+                $value = $buffer->readString($valueLength);
+                $this->data[$varName][] = rtrim($value);
             }
         }
     }
@@ -38,15 +38,21 @@ class LongStringMissingValues extends Info
      */
     public function write(Buffer $buffer)
     {
-        $this->dataCount = 0; // TODO:
-        parent::write($buffer);
-        foreach ($this->data as $varName => $values) {
-            $buffer->writeInt(strlen($varName));
-            $buffer->writeString($varName);
-            foreach ($values as $value) {
-                $buffer->writeInt(strlen($value));
-                $buffer->writeString($value);
+        if ($this->data) {
+            $localBuffer = Buffer::factory();
+            foreach ($this->data as $varName => $values) {
+                $localBuffer->writeInt(strlen($varName));
+                $localBuffer->writeString($varName);
+                $localBuffer->write(chr(count($values)), 1);
+                $localBuffer->writeInt(8);
+                foreach ($values as $value) {
+                    $localBuffer->writeString($value, 8);
+                }
             }
+            $this->dataCount = $localBuffer->position();
+            parent::write($buffer);
+            $localBuffer->rewind();
+            $buffer->writeStream($localBuffer->getStream(), $this->dataCount);
         }
     }
 }

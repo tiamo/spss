@@ -60,12 +60,14 @@ class VariableDisplayParam extends Info
      */
     public function write(Buffer $buffer)
     {
-        $this->dataCount = $this->data * 3;
-        parent::write($buffer);
-        foreach ($this->data as $item) {
-            $buffer->writeInt($item[0]);
-            $buffer->writeInt($item[1]);
-            $buffer->writeInt($item[2]);
+        if ($this->data) {
+            $this->dataCount = count($this->data) * 3;
+            parent::write($buffer);
+            foreach ($this->data as $item) {
+                $buffer->writeInt(0xFF & $item[0]);
+                $buffer->writeInt(0xFF & $item[1]);
+                $buffer->writeInt(0xFF & $item[2]);
+            }
         }
     }
 }

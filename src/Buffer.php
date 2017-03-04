@@ -31,20 +31,65 @@ class Buffer
 
     /**
      * Buffer constructor.
-     * @param null|resource $resource
+     * @param resource $stream Stream resource to wrap.
+     * @param array $options Associative array of options.
      */
-    public function __construct($resource = null)
+    private function __construct($stream, $options = [])
     {
-        if (is_null($resource)) {
-            $this->_stream = fopen('php://memory', 'r+');
-        } else {
-            $this->_stream = $resource;
+        if (!is_resource($stream)) {
+            throw new \InvalidArgumentException('Stream must be a resource');
         }
+        $this->_stream = $stream;
     }
 
     /**
-     * @param $file
-     * @return int|false
+     * Create a new stream based on the input type.
+     * @param resource|string $resource Entity body data
+     * @param array $options Additional options
+     * @return Buffer
+     */
+    public static function factory($resource = '', $options = [])
+    {
+        $type = gettype($resource);
+        switch ($type) {
+            case 'string':
+                $stream = fopen('php://temp', 'r+');
+                if ($resource !== '') {
+                    fwrite($stream, $resource);
+                    fseek($stream, 0);
+                }
+                return new self($stream, $options);
+            case 'resource':
+                return new self($resource, $options);
+            case 'object':
+                if (method_exists($resource, '__toString')) {
+                    return self::factory((string)$resource, $options);
+                }
+        }
+        throw new \InvalidArgumentException(sprintf('Invalid resource type: %s', $type));
+    }
+
+    /**
+     * @param int $length
+     * @param bool $skip
+     * @return Buffer
+     * @throws Exception
+     */
+    public function allocate($length, $skip = true)
+    {
+        $stream = fopen('php://memory', 'r+');
+        if (stream_copy_to_stream($this->_stream, $stream, $length)) {
+            if ($skip) {
+                $this->skip($length);
+            }
+            return new self($stream);
+        }
+        throw new Exception('Failed to allocate buffer');
+    }
+
+    /**
+     * @param string $file Path to file
+     * @return false|int
      */
     public function saveToFile($file)
     {
@@ -53,42 +98,30 @@ class Buffer
     }
 
     /**
-     * @param string $file
-     * @return Buffer
-     * @throws Exception
+     * @param resource $resource
+     * @param null|int $maxlength
+     * @return false|int
      */
-    public static function fromFile($file)
+    public function writeStream($resource, $maxlength = null)
     {
-        if (!file_exists($file)) {
-            throw new Exception(sprintf('File "%s" not found.', $file));
+        if (!is_resource($resource)) {
+            throw new \InvalidArgumentException('Invalid resource type');
         }
-        return new self(fopen($file, 'r'));
+        if ($maxlength) {
+            $length = stream_copy_to_stream($resource, $this->_stream, $maxlength);
+        } else {
+            $length = stream_copy_to_stream($resource, $this->_stream);
+        }
+        $this->_position += $length;
+        return $length;
     }
 
     /**
-     * @param string $data
-     * @return Buffer
+     * @return resource
      */
-    public static function fromString($data)
+    public function getStream()
     {
-        $stream = fopen('php://temp', 'r+');
-        fwrite($stream, $data);
-        return new self($stream);
-    }
-
-    /**
-     * @param int $length
-     * @return Buffer
-     * @throws Exception
-     */
-    public function allocate($length)
-    {
-        $stream = fopen('php://memory', 'r+');
-        if (stream_copy_to_stream($this->_stream, $stream, $length)) {
-            $this->skip($length);
-            return new self($stream);
-        }
-        throw new Exception('Failed to allocate buffer');
+        return $this->_stream;
     }
 
     /**
@@ -107,14 +140,13 @@ class Buffer
     /**
      * @param string $data
      * @param null|int $length
-     * @return int
+     * @return false|int
      */
     public function write($data, $length = null)
     {
-        if ($length) {
-            return fwrite($this->_stream, $data, $length);
-        }
-        return fwrite($this->_stream, $data);
+        $length = $length ? fwrite($this->_stream, $data, $length) : fwrite($this->_stream, $data);
+        $this->_position += $length;
+        return $length;
     }
 
     /**
@@ -157,6 +189,7 @@ class Buffer
      * @param $data
      * @param int|string $length
      * @param null $charset
+     * @return false|int
      */
     public function writeString($data, $length = '*', $charset = null)
     {
@@ -165,13 +198,13 @@ class Buffer
         } elseif ($this->charset) {
             $data = iconv('utf8', $this->charset, $data);
         }
-        $this->write(pack('A' . $length, $data));
+        return $this->write(pack('A' . $length, $data));
     }
 
     /**
      * @param int $length
      * @param string $format
-     * @return mixed
+     * @return false|int|float|double
      */
     private function readNumeric($length, $format)
     {
@@ -190,10 +223,11 @@ class Buffer
      * @param $data
      * @param $format
      * @param null $length
+     * @return false|int
      */
     public function writeNumeric($data, $format, $length = null)
     {
-        $this->write(pack($format, $data), $length);
+        return $this->write(pack($format, $data), $length);
     }
 
     /**
@@ -206,14 +240,15 @@ class Buffer
 
     /**
      * @param $data
+     * @return false|int
      */
     public function writeDouble($data)
     {
-        $this->writeNumeric($data, 'd', 8);
+        return $this->writeNumeric($data, 'd', 8);
     }
 
     /**
-     * @return float
+     * @return false|float
      */
     public function readFloat()
     {
@@ -222,10 +257,11 @@ class Buffer
 
     /**
      * @param $data
+     * @return false|int
      */
     public function writeFloat($data)
     {
-        $this->writeNumeric($data, 'f', 4);
+        return $this->writeNumeric($data, 'f', 4);
     }
 
     /**
@@ -238,14 +274,15 @@ class Buffer
 
     /**
      * @param $data
+     * @return false|int
      */
     public function writeInt($data)
     {
-        $this->writeNumeric($data, 'i', 4);
+        return $this->writeNumeric($data, 'i', 4);
     }
 
     /**
-     * @return int
+     * @return false|int
      */
     public function readShort()
     {
@@ -254,18 +291,20 @@ class Buffer
 
     /**
      * @param $data
+     * @return false|int
      */
     public function writeShort($data)
     {
-        $this->writeNumeric($data, 'v', 2);
+        return $this->writeNumeric($data, 'v', 2);
     }
 
     /**
      * @param $length
+     * @return false|int
      */
     public function writeNull($length)
     {
-        $this->write(pack('x' . $length));
+        return $this->write(pack('x' . $length));
     }
 
     /**
@@ -273,7 +312,18 @@ class Buffer
      */
     public function position()
     {
+//        return ftell($this->_stream);
         return $this->_position;
+    }
+
+    /**
+     * @param int $offset
+     * @param int $whence
+     * @return int
+     */
+    public function seek($offset, $whence = SEEK_SET)
+    {
+        return fseek($this->_stream, $offset, $whence);
     }
 
     /**
@@ -281,6 +331,16 @@ class Buffer
      */
     public function rewind()
     {
+        rewind($this->_stream);
+        $this->_position = 0;
+    }
+
+    /**
+     * @return void
+     */
+    public function truncate()
+    {
+        ftruncate($this->_stream, 0);
         $this->_position = 0;
     }
 
@@ -294,12 +354,30 @@ class Buffer
     }
 
     /**
+     * @return array
+     */
+    public function getMetaData()
+    {
+        return stream_get_meta_data($this->_stream);
+    }
+
+    /**
      * @param double $num
      * @return string
      */
     public static function doubleToString($num)
     {
         return self::bytesToString(unpack('C8', pack('d', $num)));
+    }
+
+    /**
+     * @param string $str
+     * @return double
+     */
+    public static function stringToDouble($str)
+    {
+        $data = unpack('d', pack('A8', $str));
+        return $data[1];
     }
 
     /**

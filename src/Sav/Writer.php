@@ -3,7 +3,6 @@
 namespace SPSS\Sav;
 
 use SPSS\Buffer;
-use SPSS\Sav\Record\Header;
 
 class Writer
 {
@@ -13,24 +12,156 @@ class Writer
     protected $buffer;
 
     /**
-     * Writer constructor.
+     * @var Record\Header
      */
-    public function __construct()
+    public $header;
+
+    /**
+     * @var Record\Variable[]
+     */
+    public $variables = [];
+
+    /**
+     * @var Record\ValueLabel[]
+     */
+    public $valueLabels = [];
+
+    /**
+     * @var Record\Info[]
+     */
+    public $info = [];
+
+    /**
+     * @var Record\Data
+     */
+    public $data;
+
+    /**
+     * Writer constructor.
+     * @param array $data
+     */
+    public function __construct($data = [])
     {
-        $this->buffer = new Buffer();
+        $this->buffer = Buffer::factory();
+        $this->buffer->context = $this;
 
-        $header = new Header();
-        $header->prodName = '@(#) IBM SPSS STATISTICS tiamo/spss';
-        $header->creationDate = date('d M y');
-        $header->creationTime = date('H:i:s');
-        $header->fileLabel = 'test';
-        $header->write($this->buffer);
+        $this->header = new Record\Header($data['header']);
+        $this->document = new Record\Document([
+//            'data' => $data['documents']
+        ]);
 
-        // TODO: other records
+        $this->info[Record\Info\MachineInteger::SUBTYPE] = new Record\Info\MachineInteger();
+        $this->info[Record\Info\MachineFloatingPoint::SUBTYPE] = new Record\Info\MachineFloatingPoint();
+        $this->info[Record\Info\VariableDisplayParam::SUBTYPE] = new Record\Info\VariableDisplayParam();
+        $this->info[Record\Info\LongVariableNames::SUBTYPE] = new Record\Info\LongVariableNames();
+        $this->info[Record\Info\VeryLongString::SUBTYPE] = new Record\Info\VeryLongString();
+        $this->info[Record\Info\LongStringValueLabels::SUBTYPE] = new Record\Info\LongStringValueLabels();
+        $this->info[Record\Info\LongStringMissingValues::SUBTYPE] = new Record\Info\LongStringMissingValues();
+
+        $this->document = new Record\Document();
+        $this->data = new Record\Data();
+
+        /** @var Variable $var */
+        foreach ($data['variables'] as $idx => $var) {
+
+            if (is_array($var)) {
+                $var = new Variable($var);
+            }
+
+            $shortName = strtoupper(substr($var->name, 0, 8));
+
+            $variable = new Record\Variable();
+            $variable->name = $shortName;
+            $variable->width = $var->width;
+            $variable->label = $var->label;
+            $variable->print = [$var->decimals, $var->width ? min($var->width, 255) : 8, $var->format, 0];
+            $variable->write = [$var->decimals, $var->width ? min($var->width, 255) : 8, $var->format, 0];
+
+            if ($var->missing) {
+                if ($var->width <= 8) {
+                    if (count($var->missing) >= 3) {
+                        $variable->missingValuesFormat = 3;
+                    } elseif (count($var->missing) == 2) {
+                        $variable->missingValuesFormat = -2;
+                    } else {
+                        $variable->missingValuesFormat = 1;
+                    }
+                    $variable->missingValues = $var->missing;
+                } else {
+                    $this->info[Record\Info\LongStringMissingValues::SUBTYPE]->data[$shortName] = $var->missing;
+                }
+            }
+
+            if ($var->values) {
+                if ($var->width > 8) {
+                    $this->info[Record\Info\LongStringValueLabels::SUBTYPE]->data[$shortName] = [
+                        'width'  => $var->width,
+                        'values' => $var->values
+                    ];
+                } else {
+                    $valueLabel = new Record\ValueLabel();
+                    foreach ($var->values as $key => $value) {
+                        $valueLabel->vars = [$idx + 1];
+                        $valueLabel->data[] = [
+                            'value' => $var->width > 0 ? Buffer::stringToDouble($key) : $key,
+                            'label' => $value
+                        ];
+                    }
+                    $this->valueLabels[] = $valueLabel;
+                }
+            }
+
+            if (Record\Variable::isVeryLong($var->width)) {
+                $this->info[Record\Info\VeryLongString::SUBTYPE]->data[$shortName] = $var->width;
+            }
+            $this->info[Record\Info\LongVariableNames::SUBTYPE]->data[$shortName] = $var->name;
+
+            $segmentCount = Record\Variable::widthToSegments($var->width);
+            for ($i = 0; $i < $segmentCount; $i++) {
+                $this->info[Record\Info\VariableDisplayParam::SUBTYPE]->data[] = [
+                    $var->measure,
+                    $var->columns,
+                    $var->align,
+                ];
+            }
+
+            $dataCount = count($var->data);
+            if ($dataCount > $this->header->casesCount) {
+                $this->header->casesCount = $dataCount;
+            }
+
+            foreach ($var->data as $case => $value) {
+                $this->data->matrix[$case][$idx] = $value;
+            }
+
+            $this->header->nominalCaseSize += Record\Variable::widthToOcts($var->width);
+            $this->variables[] = $variable;
+        }
+
+        $this->header->write($this->buffer);
+
+        foreach ($this->variables as $variable) {
+            $variable->write($this->buffer);
+        }
+        foreach ($this->valueLabels as $valueLabel) {
+            $valueLabel->write($this->buffer);
+        }
+        if (!empty($data['documents'])) {
+            $this->document->lines = $data['documents'];
+            $this->document->write($this->buffer);
+        }
+        foreach ($this->info as $info) {
+            $info->write($this->buffer);
+        }
+        $this->data->write($this->buffer);
     }
 
+    /**
+     * @param $file
+     * @return false|int
+     */
     public function save($file)
     {
-        $this->buffer->saveToFile($file);
+        return $this->buffer->saveToFile($file);
     }
 }

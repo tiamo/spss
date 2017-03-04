@@ -9,16 +9,22 @@ use SPSS\Sav\Record;
 class Data extends Record
 {
     const TYPE = 999;
-    const OPCODE_CONTINUE = 0;
-    const OPCODE_END_DATA = 252;
+
+    /** No-operation. This is simply ignored. */
+    const OPCODE_NOP = 0;
+    /** End-of-file. */
+    const OPCODE_EOF = 252;
+    /** Verbatim raw data. Read an 8-byte segment of raw data. */
     const OPCODE_RAW_DATA = 253;
+    /** Compressed whitespaces. Expand to an 8-byte segment of whitespaces. */
     const OPCODE_WHITESPACES = 254;
-    const OPCODE_SYSMIS = 255;
+    /** Compressed sysmiss value. Expand to an 8-byte segment of SYSMISS value. */
+    const OPCODE_SYSMISS = 255;
 
     /**
-     * @var array
+     * @var array [case_index][var_index]
      */
-    public $data = [];
+    public $matrix = [];
 
     /**
      * @var array
@@ -28,7 +34,7 @@ class Data extends Record
     /**
      * @var int
      */
-    private $opcodeIndex = 8;
+    private $opcodeIndex = 0;
 
     /**
      * @param Buffer $buffer
@@ -37,21 +43,28 @@ class Data extends Record
     public function read(Buffer $buffer)
     {
         if ($buffer->readInt() != 0) {
-            throw new Exception('Error reading data record. Non-zero value found.');
+            throw new \InvalidArgumentException('Error reading data record. Non-zero value found.');
         }
         if (!isset($buffer->context->variables)) {
-            throw new Exception('Variables required in buffer context.');
+            throw new \InvalidArgumentException('Variables required');
         }
         if (!isset($buffer->context->header)) {
-            throw new Exception('Header required in buffer context.');
+            throw new \InvalidArgumentException('Header required');
         }
         if (!isset($buffer->context->info)) {
-            throw new Exception('Info required in buffer context.');
+            throw new \InvalidArgumentException('Info required');
         }
 
         $compressed = $buffer->context->header->compression;
+        $bias = $buffer->context->header->bias;
         $casesCount = $buffer->context->header->casesCount;
+        /** @var Variable[] $variables */
         $variables = $buffer->context->variables;
+
+        $veryLongStrings = [];
+        if (isset($buffer->context->info[Record\Info\VeryLongString::SUBTYPE])) {
+            $veryLongStrings = $buffer->context->info[Record\Info\VeryLongString::SUBTYPE]->data;
+        }
 
         if (isset($buffer->context->info[Record\Info\MachineFloatingPoint::SUBTYPE])) {
             $sysmis = $buffer->context->info[Record\Info\MachineFloatingPoint::SUBTYPE]->sysmis;
@@ -59,79 +72,72 @@ class Data extends Record
             $sysmis = NAN;
         }
 
-        $veryLongStrings = [];
-        if (isset($buffer->context->info[Record\Info\VeryLongString::SUBTYPE])) {
-            $veryLongStrings = $buffer->context->info[Record\Info\VeryLongString::SUBTYPE]->data;
-        }
+        $this->opcodeIndex = 8;
 
         for ($case = 0; $case < $casesCount; $case++) {
-            $parent = $octs = 0;
+            $parent = -1;
+            $octs = 0;
             foreach ($variables as $index => $var) {
-                if ($var->type == 0) {
+                if ($var->width == 0) {
                     if (!$compressed) {
-                        $this->data[$case][$index] = $buffer->readDouble();
+                        $this->matrix[$case][$index] = $buffer->readDouble();
                     } else {
                         $opcode = $this->readOpcode($buffer);
                         switch ($opcode) {
-                            case self::OPCODE_CONTINUE;
+                            case self::OPCODE_NOP;
                                 break;
-                            case self::OPCODE_END_DATA;
+                            case self::OPCODE_EOF;
                                 throw new Exception('Error reading data: unexpected end of compressed data file (cluster code 252)');
                                 break;
                             case self::OPCODE_RAW_DATA;
-                                $this->data[$case][$index] = $buffer->readDouble();
+                                $this->matrix[$case][$index] = $buffer->readDouble();
                                 break;
-                            case self::OPCODE_WHITESPACES;
-                                $this->data[$case][$index] = 0.0;
-                                break;
-                            case self::OPCODE_SYSMIS;
-                                $this->data[$case][$index] = $sysmis;
+                            case self::OPCODE_SYSMISS;
+                                $this->matrix[$case][$index] = $sysmis;
                                 break;
                             default:
-                                $this->data[$case][$index] = $opcode - $buffer->context->header->bias;
+                                $this->matrix[$case][$index] = $opcode - $bias;
                                 break;
                         }
                     }
                 } else {
-                    $value = '';
+                    $val = '';
                     if (!$compressed) {
-                        $value = $buffer->readString(8);
+                        $val = $buffer->readString(8);
                     } else {
                         $opcode = $this->readOpcode($buffer);
                         switch ($opcode) {
-                            case self::OPCODE_CONTINUE;
+                            case self::OPCODE_NOP;
                                 break;
-                            case self::OPCODE_END_DATA;
+                            case self::OPCODE_EOF;
                                 throw new Exception('Error reading data: unexpected end of compressed data file (cluster code 252)');
                                 break;
                             case self::OPCODE_RAW_DATA;
-                                $value = $buffer->readString(8);
+                                $val = $buffer->readString(8);
                                 break;
                             case self::OPCODE_WHITESPACES;
-                                $value = '        ';
+                                $val = '        ';
                                 break;
-//                            case self::OPCODE_SYSMIS:
-//                                $value = '';
-//                                break;
                         }
                     }
-                    if ($parent) {
-                        $this->data[$case][$parent] .= $value;
+                    if ($parent >= 0) {
+                        $this->matrix[$case][$parent] .= $val;
                         $octs--;
                         if ($octs <= 0) {
-                            $this->data[$case][$parent] = trim($this->data[$case][$parent]);
-                            $parent = 0;
+                            $this->matrix[$case][$parent] = trim($this->matrix[$case][$parent]);
+                            $parent = -1;
                         }
                     } else {
-                        $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $var->type;
+                        $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $var->width;
+
                         if ($width > 0) {
                             $octs = Variable::widthToOcts($width) - 1;
                             if ($octs > 0) {
                                 $parent = $index;
                             } else {
-                                $value = rtrim($value);
+                                $val = rtrim($val);
                             }
-                            $this->data[$case][$index] = $value;
+                            $this->matrix[$case][$index] = $val;
                         }
                     }
                 }
@@ -144,6 +150,73 @@ class Data extends Record
      */
     public function write(Buffer $buffer)
     {
+        $buffer->writeInt(self::TYPE);
+        $buffer->writeInt(0);
+
+        if (!isset($buffer->context->variables)) {
+            throw new \InvalidArgumentException('Variables required');
+        }
+        if (!isset($buffer->context->header)) {
+            throw new \InvalidArgumentException('Header required');
+        }
+        if (!isset($buffer->context->info)) {
+            throw new \InvalidArgumentException('Info required');
+        }
+
+        $compressed = $buffer->context->header->compression;
+        $bias = $buffer->context->header->bias;
+        $casesCount = $buffer->context->header->casesCount;
+        /** @var Variable[] $variables */
+        $variables = $buffer->context->variables;
+
+        if (isset($buffer->context->info[Record\Info\MachineFloatingPoint::SUBTYPE])) {
+            $sysmis = $buffer->context->info[Record\Info\MachineFloatingPoint::SUBTYPE]->sysmis;
+        } else {
+            $sysmis = NAN;
+        }
+
+        $dataBuffer = Buffer::factory();
+
+        for ($case = 0; $case < $casesCount; $case++) {
+            foreach ($variables as $index => $var) {
+                $value = $this->matrix[$case][$index];
+                if ($var->width == 0) {
+                    if (!$compressed) {
+                        $buffer->writeDouble($value);
+                    } else {
+                        if ($value == $sysmis) {
+                            $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_SYSMISS);
+                        } elseif ($value >= 1 - $bias && $value <= 251 - $bias && $value == (int)$value) {
+                            $this->writeOpcode($buffer, $dataBuffer, $value + $bias);
+                        } else {
+                            $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_RAW_DATA);
+                            $dataBuffer->writeDouble($value);
+                        }
+                    }
+                } else {
+                    if (!$compressed) {
+                        $buffer->writeString($value, Buffer::roundUp($var->width, 8));
+                    } else {
+                        $offset = 0;
+                        $segmentsCount = Record\Variable::widthToSegments($var->width);
+                        for ($s = 0; $s < $segmentsCount; $s++) {
+                            $segWidth = Record\Variable::segmentAllocWidth($var->width, $s);
+                            for ($i = $segWidth; $i > 0; $i -= 8, $offset += 8) {
+                                $chunkSize = min($i, 8);
+                                $val = substr($value, $offset, 8);
+                                if (empty($val)) {
+                                    $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_WHITESPACES);
+                                } else {
+                                    $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_RAW_DATA);
+                                    $dataBuffer->writeString($val, $chunkSize);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_EOF);
     }
 
     /**
@@ -157,5 +230,29 @@ class Data extends Record
             $this->opcodeIndex = 0;
         }
         return 0xFF & $this->opcodes[$this->opcodeIndex++];
+    }
+
+    /**
+     * @param Buffer $buffer
+     * @param Buffer $dataBuffer
+     * @param int $opcode
+     */
+    public function writeOpcode(Buffer $buffer, Buffer $dataBuffer, $opcode)
+    {
+        if ($this->opcodeIndex >= 8 || $opcode == self::OPCODE_EOF) {
+            foreach ($this->opcodes as $opc) {
+                $buffer->write(chr($opc));
+            }
+            $padding = max(8 - count($this->opcodes), 0);
+            for ($i = 0; $i < $padding; $i++) {
+                $buffer->write(chr(self::OPCODE_NOP));
+            }
+            $this->opcodes = [];
+            $this->opcodeIndex = 0;
+            $dataBuffer->rewind();
+            $buffer->writeStream($dataBuffer->getStream());
+            $dataBuffer->truncate();
+        }
+        $this->opcodes[$this->opcodeIndex++] = 0xFF & $opcode;
     }
 }

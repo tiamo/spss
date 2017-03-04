@@ -33,7 +33,7 @@ class Document extends Record
         $buffer->writeInt(self::TYPE);
         $buffer->writeInt(count($this->lines));
         foreach ($this->lines as $line) {
-            $buffer->writeString($line, 80);
+            $buffer->writeString(strval($line), 80);
         }
     }
 }

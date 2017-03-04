@@ -70,11 +70,11 @@ class ValueLabel extends Record
     {
         $buffer->writeInt(self::TYPE);
         $buffer->writeInt(count($this->data));
-        foreach ($this->data as $label) {
-            $labelLength = min(strlen($label[1]), self::LABEL_MAX_LENGTH);
-            $buffer->writeDouble($label[0]);
+        foreach ($this->data as $item) {
+            $labelLength = min(strlen($item['label']), self::LABEL_MAX_LENGTH);
+            $buffer->writeDouble($item['value']);
             $buffer->write(chr($labelLength));
-            $buffer->writeString($label[1], Buffer::roundUp($labelLength + 1, 8) - 1);
+            $buffer->writeString($item['label'], Buffer::roundUp($labelLength + 1, 8) - 1);
         }
         $buffer->writeInt(4);
         $buffer->writeInt(count($this->vars));

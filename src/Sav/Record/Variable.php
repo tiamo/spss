@@ -20,12 +20,12 @@ class Variable extends Record
     const EFFECTIVE_VLS_CHUNK = 252;
 
     /**
-     * @var int Variable type code.
+     * @var int Variable width.
      * Set to 0 for a numeric variable.
      * For a short string variable or the first part of a long string variable, this is set to the width of the string.
      * For the second and subsequent parts of a long string variable, set to -1, and the remaining fields in the structure are ignored.
      */
-    public $type;
+    public $width;
 
     /**
      * @var int
@@ -84,7 +84,7 @@ class Variable extends Record
      */
     public function read(Buffer $buffer)
     {
-        $this->type = $buffer->readInt();
+        $this->width = $buffer->readInt();
         $hasLabel = $buffer->readInt();
         $this->missingValuesFormat = $buffer->readInt();
         $this->print = Buffer::intToBytes($buffer->readInt());
@@ -92,9 +92,9 @@ class Variable extends Record
         $this->name = rtrim($buffer->readString(8));
         if ($hasLabel) {
             $labelLength = $buffer->readInt();
-            $this->label = $buffer->readString($labelLength);
+            $this->label = $buffer->readString($labelLength, 4);
         }
-        if ($this->missingValuesFormat) {
+        if ($this->missingValuesFormat != 0) {
             for ($i = 0; $i < abs($this->missingValuesFormat); $i++) {
                 $this->missingValues[] = $buffer->readDouble();
             }
@@ -106,9 +106,9 @@ class Variable extends Record
      */
     public function write(Buffer $buffer)
     {
-        $width = $this->type;
-        $seg0width = self::segmentAllocWidth($width, 0);
+        $seg0width = self::segmentAllocWidth($this->width, 0);
         $hasLabel = !empty($this->label);
+
         $buffer->writeInt(self::TYPE);
         $buffer->writeInt($seg0width);
         $buffer->writeInt($hasLabel ? 1 : 0);
@@ -117,27 +117,32 @@ class Variable extends Record
         $buffer->writeInt(Buffer::bytesToInt($this->write));
         $buffer->writeString($this->name, 8);
         if ($hasLabel) {
-            $labelLength = Buffer::roundUp(strlen($this->label), 4);
+            $labelLength = strlen($this->label);
             $buffer->writeInt($labelLength);
-            $buffer->writeString($this->label, $labelLength);
+            $buffer->writeString($this->label, Buffer::roundUp($labelLength, 4));
         }
         if ($this->missingValuesFormat) {
             foreach ($this->missingValues as $val) {
-                $buffer->writeDouble($val);
+                if ($this->width == 0) {
+                    $buffer->writeDouble($val);
+                } else {
+                    $buffer->writeString($val, 8);
+                }
             }
         }
         $this->writeBlank($buffer, $seg0width);
-
-        if (self::isVeryLong($this->type)) {
-            for ($i = 1; $i < self::widthToSegments($width); $i++) {
-                $segWidth = self::segmentAllocWidth($width, $i);
+        if (self::isVeryLong($this->width)) {
+            $countSegments = self::widthToSegments($this->width);
+            for ($i = 1; $i < $countSegments; $i++) {
+                $segWidth = self::segmentAllocWidth($this->width, $i);
                 $buffer->writeInt(self::TYPE);
                 $buffer->writeInt($segWidth);
                 $buffer->writeInt(0);
                 $buffer->writeInt(0);
                 $buffer->writeInt(0);
                 $buffer->writeInt(0);
-                $buffer->write(substr($this->name, 0, -strlen($i)) . $i);
+                $buffer->writeString($this->name, 8); // TODO: unique name
+//                $buffer->writeString(substr($this->name, 0, - strlen($i)) . $i, 8);
                 $this->writeBlank($buffer, $segWidth);
             }
         }
@@ -145,7 +150,7 @@ class Variable extends Record
 
     /**
      * @param Buffer $buffer
-     * @param $width
+     * @param int $width
      */
     public function writeBlank(Buffer $buffer, $width)
     {
@@ -156,14 +161,14 @@ class Variable extends Record
             $buffer->writeInt(0);
             $buffer->writeInt(0);
             $buffer->writeInt(0);
-            $buffer->write('00000000');
+            $buffer->write('        ');
         }
     }
 
     /**
      * @return int
      */
-    public function getDecimals()
+    public function getPrintDecimals()
     {
         return $this->print[0];
     }
@@ -171,7 +176,7 @@ class Variable extends Record
     /**
      * @return int
      */
-    public function getWidth()
+    public function getPrintWidth()
     {
         return $this->print[1];
     }
@@ -179,7 +184,7 @@ class Variable extends Record
     /**
      * @return int
      */
-    public function getFormat()
+    public function getPrintFormat()
     {
         return $this->print[2];
     }
@@ -251,5 +256,16 @@ class Variable extends Record
                 self::REAL_VLS_CHUNK :
                 $width - $segment * self::EFFECTIVE_VLS_CHUNK) :
             $width;
+    }
+
+    /**
+     * SPSS represents a date as the number of seconds since the epoch, midnight, Oct. 14, 1582.
+     * @param $timestamp
+     * @param string $format
+     * @return false|int
+     */
+    public static function date($timestamp, $format = 'Y M d')
+    {
+        return date($format, strtotime('1582-10-04 00:00:00') + $timestamp);
     }
 }

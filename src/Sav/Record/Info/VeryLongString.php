@@ -33,12 +33,14 @@ class VeryLongString extends Info
      */
     public function write(Buffer $buffer)
     {
-        $data = '';
-        foreach ($this->data as $key => $value) {
-            $data .= sprintf('%s=%05d%c', $key, $value, 0) . self::DELIMITER;
+        if ($this->data) {
+            $data = '';
+            foreach ($this->data as $key => $value) {
+                $data .= sprintf('%s=%05d%c', $key, $value, 0) . self::DELIMITER;
+            }
+            $this->dataCount = strlen($data);
+            parent::write($buffer);
+            $buffer->writeString($data);
         }
-        $this->dataCount = strlen($data);
-        parent::write($buffer);
-        $buffer->writeString($data);
     }
 }

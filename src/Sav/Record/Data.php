@@ -27,12 +27,12 @@ class Data extends Record
     public $matrix = [];
 
     /**
-     * @var array
+     * @var array Latest opcodes data
      */
     private $opcodes = [];
 
     /**
-     * @var int
+     * @var int Current opcode index
      */
     private $opcodeIndex = 0;
 

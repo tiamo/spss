@@ -27,6 +27,11 @@ class Writer
     public $valueLabels = [];
 
     /**
+     * @var Record\Document
+     */
+    public $document;
+
+    /**
      * @var Record\Info[]
      */
     public $info = [];
@@ -44,11 +49,18 @@ class Writer
     {
         $this->buffer = Buffer::factory();
         $this->buffer->context = $this;
+        if (!empty($data)) {
+            $this->init($data);
+        }
+    }
 
+    /**
+     * @param array $data
+     */
+    public function init($data)
+    {
         $this->header = new Record\Header($data['header']);
-        $this->document = new Record\Document([
-//            'data' => $data['documents']
-        ]);
+        $this->document = new Record\Document();
 
         $this->info[Record\Info\MachineInteger::SUBTYPE] = new Record\Info\MachineInteger();
         $this->info[Record\Info\MachineFloatingPoint::SUBTYPE] = new Record\Info\MachineFloatingPoint();
@@ -58,7 +70,6 @@ class Writer
         $this->info[Record\Info\LongStringValueLabels::SUBTYPE] = new Record\Info\LongStringValueLabels();
         $this->info[Record\Info\LongStringMissingValues::SUBTYPE] = new Record\Info\LongStringMissingValues();
 
-        $this->document = new Record\Document();
         $this->data = new Record\Data();
 
         /** @var Variable $var */

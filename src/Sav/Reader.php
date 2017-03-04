@@ -49,20 +49,15 @@ class Reader
 
         do {
             $recType = $buffer->readInt();
-
-//            var_dump($recType);
-
             switch ($recType) {
                 case Record\Variable::TYPE:
                     $this->variables[] = Record\Variable::fill($buffer);
                     break;
                 case Record\ValueLabel::TYPE:
-
                     $this->valueLabels[] = Record\ValueLabel::fill($buffer);
                     break;
                 case Record\Document::TYPE:
                     $this->documents = Record\Document::fill($buffer)->lines;
-
                     break;
                 case Record\Info::TYPE:
                     $subtype = $buffer->readInt();

@@ -1,5 +1,6 @@
-SPSS - php implementation
+SPSS
 ====
+php implementation
 
 ## Requirements
 * PHP 5.3.0 and up.

@@ -53,7 +53,7 @@ class Buffer
         $type = gettype($resource);
         switch ($type) {
             case 'string':
-                $stream = fopen('php://temp', 'r+');
+                $stream = isset($options['memory']) ? fopen('php://memory', 'r+') : fopen('php://temp', 'r+');
                 if ($resource !== '') {
                     fwrite($stream, $resource);
                     fseek($stream, 0);
@@ -84,7 +84,7 @@ class Buffer
             }
             return new self($stream);
         }
-        throw new Exception('Failed to allocate buffer');
+        throw new Exception('Buffer allocation failed');
     }
 
     /**

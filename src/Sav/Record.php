@@ -18,15 +18,13 @@ abstract class Record
     public function __construct($data = [])
     {
         foreach ($data as $key => $value) {
-            if (isset($this->{$key})) {
-                $this->{$key} = $value;
-            }
+            $this->{$key} = $value;
         }
     }
 
     /**
      * @param Buffer $buffer
-     * @return self
+     * @return self|static
      */
     public static function fill(Buffer $buffer)
     {

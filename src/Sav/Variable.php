@@ -38,5 +38,4 @@ class Variable
             $this->{$key} = $value;
         }
     }
-
 }

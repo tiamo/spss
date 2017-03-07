@@ -213,9 +213,9 @@ class Variable extends Record
         } elseif (!self::isVeryLong($width)) {
             $bytes = $width;
         } else {
-            $chunks = $width / self::EFFECTIVE_VLS_CHUNK;
+            $chunks = floor($width / self::EFFECTIVE_VLS_CHUNK);
             $remainder = $width % self::EFFECTIVE_VLS_CHUNK;
-            $bytes = $remainder + ($chunks + Buffer::roundUp(self::REAL_VLS_CHUNK, 8));
+            $bytes = $remainder + ($chunks * Buffer::roundUp(self::REAL_VLS_CHUNK, 8));
         }
         return Buffer::roundUp($bytes, 8);
     }

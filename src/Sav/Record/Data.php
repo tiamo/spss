@@ -100,6 +100,7 @@ class Data extends Record
                                 break;
                         }
                     }
+
                 } else {
                     $val = '';
                     if (!$compressed) {
@@ -124,14 +125,13 @@ class Data extends Record
                         $this->matrix[$case][$parent] .= $val;
                         $octs--;
                         if ($octs <= 0) {
-                            $this->matrix[$case][$parent] = trim($this->matrix[$case][$parent]);
+                            $this->matrix[$case][$parent] = rtrim($this->matrix[$case][$parent]);
                             $parent = -1;
                         }
                     } else {
                         $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $var->width;
-
                         if ($width > 0) {
-                            $octs = Variable::widthToOcts($width) - 1;
+                            $octs = Record\Variable::widthToOcts($width) - 1; // Buffer::roundUp($width, 8) / 8) -1;
                             if ($octs > 0) {
                                 $parent = $index;
                             } else {
@@ -175,11 +175,12 @@ class Data extends Record
             $sysmis = NAN;
         }
 
-        $dataBuffer = Buffer::factory();
+        $dataBuffer = Buffer::factory('', ['memory' => true]);
 
         for ($case = 0; $case < $casesCount; $case++) {
             foreach ($variables as $index => $var) {
                 $value = $this->matrix[$case][$index];
+
                 if ($var->width == 0) {
                     if (!$compressed) {
                         $buffer->writeDouble($value);
@@ -202,13 +203,13 @@ class Data extends Record
                         for ($s = 0; $s < $segmentsCount; $s++) {
                             $segWidth = Record\Variable::segmentAllocWidth($var->width, $s);
                             for ($i = $segWidth; $i > 0; $i -= 8, $offset += 8) {
-                                $chunkSize = min($i, 8);
-                                $val = substr($value, $offset, 8);
+//                                $chunkSize = min($i, 8);
+                                $val = mb_substr($value, $offset, 8);
                                 if (empty($val)) {
                                     $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_WHITESPACES);
                                 } else {
                                     $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_RAW_DATA);
-                                    $dataBuffer->writeString($val, $chunkSize);
+                                    $dataBuffer->writeString($val, 8);
                                 }
                             }
                         }

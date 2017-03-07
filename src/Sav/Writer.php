@@ -7,11 +7,6 @@ use SPSS\Buffer;
 class Writer
 {
     /**
-     * @var Buffer
-     */
-    protected $buffer;
-
-    /**
      * @var Record\Header
      */
     public $header;
@@ -42,6 +37,11 @@ class Writer
     public $data;
 
     /**
+     * @var Buffer
+     */
+    protected $buffer;
+
+    /**
      * Writer constructor.
      * @param array $data
      */
@@ -49,6 +49,7 @@ class Writer
     {
         $this->buffer = Buffer::factory();
         $this->buffer->context = $this;
+
         if (!empty($data)) {
             $this->init($data);
         }
@@ -60,6 +61,9 @@ class Writer
     public function init($data)
     {
         $this->header = new Record\Header($data['header']);
+        $this->header->nominalCaseSize = 0;
+        $this->header->casesCount = 0;
+
         $this->document = new Record\Document();
 
         $this->info[Record\Info\MachineInteger::SUBTYPE] = new Record\Info\MachineInteger();

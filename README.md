@@ -1,6 +1,6 @@
 SPSS
 ====
-php implementation
+A PHP library for reading and writing SPSS data files.
 
 ## Requirements
 * PHP 5.3.0 and up.

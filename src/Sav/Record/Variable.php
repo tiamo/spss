@@ -257,15 +257,4 @@ class Variable extends Record
                 $width - $segment * self::EFFECTIVE_VLS_CHUNK) :
             $width;
     }
-
-    /**
-     * SPSS represents a date as the number of seconds since the epoch, midnight, Oct. 14, 1582.
-     * @param $timestamp
-     * @param string $format
-     * @return false|int
-     */
-    public static function date($timestamp, $format = 'Y M d')
-    {
-        return date($format, strtotime('1582-10-04 00:00:00') + $timestamp);
-    }
 }

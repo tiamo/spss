@@ -24,7 +24,7 @@ abstract class Record
 
     /**
      * @param Buffer $buffer
-     * @return self|static
+     * @return static
      */
     public static function fill(Buffer $buffer)
     {

@@ -3,10 +3,11 @@
 namespace SPSS\Tests;
 
 use SPSS\Sav\Reader;
-use SPSS\Sav\Writer;
 use SPSS\Sav\Record;
+use SPSS\Sav\Variable;
+use SPSS\Sav\Writer;
 
-class SavTest extends \PHPUnit_Framework_TestCase
+class SavRandomReadWriteTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var string
@@ -14,29 +15,11 @@ class SavTest extends \PHPUnit_Framework_TestCase
     public $file = 'tmp/data.sav';
 
     /**
-     * @var array
-     */
-    public $baseData = [
-        'header'    => [
-//            'recType'     => '$FL2',
-            'prodName'     => '@(#) SPSS DATA FILE test',
-            'layoutCode'   => 2,
-            'compression'  => 1,
-            'weightIndex'  => 0,
-            'bias'         => 100,
-            'creationDate' => '13 Feb 89',
-            'creationTime' => '13:13:13',
-            'fileLabel'    => 'test file',
-        ],
-        'variables' => []
-    ];
-
-    /**
      * @return array
      */
     public function testWrite()
     {
-        $data = $this->generateRandomData();
+        $data = $this->dataProvider();
         $writer = new Writer($data);
         $writer->save($this->file);
         $this->assertFileExists($this->file);
@@ -71,27 +54,40 @@ class SavTest extends \PHPUnit_Framework_TestCase
     /**
      * @return array
      */
-    public function generateRandomData()
+    public function dataProvider()
     {
-        $data = $this->baseData;
-        $data['header']['nominalCaseSize'] = 0;
-        $data['header']['casesCount'] = mt_rand(2, 10);
+        $data = [
+            'header' => [
+                'recType' => '$FL2',
+                'prodName' => '@(#) SPSS DATA FILE test',
+                'layoutCode' => 2,
+                'nominalCaseSize' => 0,
+                'casesCount' => mt_rand(2, 10),
+                'compression' => 1,
+                'weightIndex' => 0,
+                'bias' => 100,
+                'creationDate' => '13 Feb 89',
+                'creationTime' => '13:13:13',
+                'fileLabel' => 'test file',
+            ],
+            'variables' => []
+        ];
         $count = mt_rand(1, 5);
         for ($i = 0; $i < $count; $i++) {
             $isNumeric = rand(0, 1);
             $var = [
-                'name'    => 'VAR' . $i,
-                'label'   => 'Label - ' . $i,
-                'width'   => 0,
-                'format'  => 1,
+                'name' => 'VAR' . $i,
+                'label' => 'Label - ' . $i,
+                'width' => 0,
+                'format' => Variable::FORMAT_TYPE_A,
                 'columns' => mt_rand(0, 100),
-                'align'   => mt_rand(0, 2),
+                'align' => mt_rand(0, 2),
                 'measure' => mt_rand(1, 3),
-                'data'    => [],
+                'data' => [],
             ];
             if ($isNumeric) {
                 $var['decimals'] = mt_rand(0, 2);
-                $var['format'] = 5;
+                $var['format'] = Variable::FORMAT_TYPE_F;
                 for ($c = 0; $c < $data['header']['casesCount']; $c++) {
                     $var['data'][$c] = mt_rand(1, 99999) . '.' . mt_rand(1, 99999);
                 }

@@ -1,0 +1,16 @@
+language: php
+
+php:
+- 5.5
+- 5.6
+- 7.0
+
+install:
+- travis_retry composer install --no-interaction --no-suggest
+
+before_script:
+- phpenv config-rm xdebug.ini
+
+script:
+- ./vendor/bin/phing all
+

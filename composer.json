@@ -40,10 +40,5 @@
     "psr-4": {
       "SPSS\\Tests\\": "tests/"
     }
-  },
-  "extra": {
-    "branch-alias": {
-      "dev-master": "2.1.x-dev"
-    }
   }
 }

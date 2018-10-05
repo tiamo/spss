@@ -45,7 +45,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
             'columns' => mt_rand(0, 100),
             'alignment' => mt_rand(0, 2),
             'measure' => mt_rand(1, 3),
-            'width' => 0,
+            'width' => 8,
         ];
 
         if ($opts['numeric']) {

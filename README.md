@@ -4,7 +4,7 @@ A PHP library for reading and writing SPSS / PSPP .sav data files.
 
 VERSION 2.1.0 ([CHANGELOG](CHANGELOG.md))
 
-[![Stable Build Status](https://travis-ci.org/tiamo/spss.svg?branch=stable)](https://travis-ci.org/tiamo/spss)
+[![Build Status](https://travis-ci.org/tiamo/spss.svg?branch=master)](https://travis-ci.org/tiamo/spss)
 
 ## Requirements
 

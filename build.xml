@@ -20,12 +20,12 @@
         <exec command="./runTests.sh" dir="tests" checkreturn="true" logoutput="true"/>
     </target>
 
-    <!--<target name="coverage" description="Generates the code coverage using the unit tests">-->
-    <!--<echo msg="Generates the code coverage report using the unit tests" />-->
-    <!--<delete file="${project.basedir}/tests/tmp/phing-unittest.log" quiet="true" failonerror="false" />-->
-    <!--<delete dir="${project.basedir}/docs/CodeCoverage/*" quiet="true" failonerror="false" />-->
-    <!--<exec command="./runCoverage.sh" dir="tests" checkreturn="true" logoutput="true" />-->
-    <!--</target>-->
+    <target name="coverage" description="Generates the code coverage using the unit tests">
+        <echo msg="Generates the code coverage report using the unit tests"/>
+        <delete file="${project.basedir}/tests/tmp/phing-unittest.log" quiet="true" failonerror="false"/>
+        <delete dir="${project.basedir}/docs/CodeCoverage/*" quiet="true" failonerror="false"/>
+        <exec command="./runCoverage.sh" dir="tests" checkreturn="true" logoutput="true"/>
+    </target>
 
     <target name="all" depends="test" description="Execute all parts of the package">
     </target>

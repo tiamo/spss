@@ -10,7 +10,7 @@
          processIsolation="false"
          stopOnFailure="false">
     <testsuites>
-        <testsuite name="General">
+        <testsuite name="SPSS Test Suite">
             <directory suffix="Test.php">./</directory>
         </testsuite>
     </testsuites>

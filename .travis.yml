@@ -6,7 +6,7 @@ php:
 - 7.0
 
 install:
-- travis_retry composer install --no-interaction --no-suggest
+- composer install --no-interaction --no-suggest
 
 before_script:
 - phpenv config-rm xdebug.ini

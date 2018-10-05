@@ -10,11 +10,57 @@ use SPSS\Utils;
 class SavRandomReadWriteTest extends TestCase
 {
     /**
-     * @dataProvider dataProvider
+     * @return array
+     */
+    public function provider()
+    {
+        $header = [
+            'recType' => Record\Header::NORMAL_REC_TYPE,
+            'prodName' => '@(#) SPSS DATA FILE',
+            'layoutCode' => 2,
+            'nominalCaseSize' => 0,
+            'casesCount' => mt_rand(10, 100),
+            'compression' => 1,
+            'weightIndex' => 0,
+            'bias' => 100,
+            'creationDate' => date('d M y'),
+            'creationTime' => date('H:i:s'),
+            'fileLabel' => 'test read/write',
+        ];
+
+        $documents = [
+            $this->generateRandomString(mt_rand(5, Record\Document::LENGTH)),
+            $this->generateRandomString(mt_rand(5, Record\Document::LENGTH)),
+        ];
+
+        $variables = [];
+
+        // Generate random variables
+
+        $count = mt_rand(1, 20);
+        for ($i = 0; $i < $count; $i++) {
+            $var = $this->generateVariable([
+                    'id' => $this->generateRandomString(mt_rand(2, 100)),
+                    'casesCount' => $header['casesCount'],
+                ]
+            );
+            $header['nominalCaseSize'] += Utils::widthToOcts($var['width']);
+            $variables[] = $var;
+        }
+
+        return [
+            [
+                compact('header', 'variables', 'documents'),
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider provider
      * @param array $data
      * @throws \Exception
      */
-    public function testWriteAndRead($data)
+    public function testWriteRead($data)
     {
         $writer = new Writer($data);
 
@@ -87,49 +133,4 @@ class SavRandomReadWriteTest extends TestCase
         // TODO: info
     }
 
-    /**
-     * @return array
-     */
-    public function dataProvider()
-    {
-        $header = [
-            'recType' => Record\Header::NORMAL_REC_TYPE,
-            'prodName' => '@(#) SPSS DATA FILE',
-            'layoutCode' => 2,
-            'nominalCaseSize' => 0,
-            'casesCount' => mt_rand(10, 100),
-            'compression' => 1,
-            'weightIndex' => 0,
-            'bias' => 100,
-            'creationDate' => date('d M y'),
-            'creationTime' => date('H:i:s'),
-            'fileLabel' => 'test read/write',
-        ];
-
-        $documents = [
-            $this->generateRandomString(mt_rand(5, Record\Document::LENGTH)),
-            $this->generateRandomString(mt_rand(5, Record\Document::LENGTH)),
-        ];
-
-        $variables = [];
-
-        // Generate random variables
-
-        $count = mt_rand(1, 20);
-        for ($i = 0; $i < $count; $i++) {
-            $var = $this->generateVariable([
-                    'id' => $this->generateRandomString(mt_rand(2, 100)),
-                    'casesCount' => $header['casesCount'],
-                ]
-            );
-            $header['nominalCaseSize'] += Utils::widthToOcts($var['width']);
-            $variables[] = $var;
-        }
-
-        return [
-            [
-                compact('header', 'variables', 'documents'),
-            ],
-        ];
-    }
 }

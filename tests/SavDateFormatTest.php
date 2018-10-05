@@ -10,39 +10,6 @@ use SPSS\Sav\Writer;
 class SavDateFormatTest extends TestCase
 {
     /**
-     * @dataProvider dataProvider
-     * @param array $data
-     * @throws \Exception
-     */
-    public function testWriteAndRead($data)
-    {
-        $writer = new Writer($data);
-
-        $buffer = $writer->getBuffer();
-        $buffer->rewind();
-
-        $stream = $buffer->getStream();
-
-        $reader = Reader::fromString($stream)->read();
-
-        $this->checkHeader($data['header'], $reader);
-
-        $index = 0;
-        foreach ($data['variables'] as $var) {
-            /** @var Record\Variable $_var */
-            $_var = $reader->variables[$index];
-
-            // TODO: test long variables
-            // $this->assertEquals($var['name'], $_var->name);
-
-            $this->assertEquals($var['format'], $_var->print[1]);
-            $this->assertEquals($var['width'], $_var->print[2]);
-
-            $index++;
-        }
-    }
-
-    /**
      * @return array
      */
     public function dataProvider()
@@ -363,4 +330,38 @@ class SavDateFormatTest extends TestCase
             ],
         ];
     }
+
+    /**
+     * @dataProvider dataProvider
+     * @param array $data
+     * @throws \Exception
+     */
+    public function testWriteRead($data)
+    {
+        $writer = new Writer($data);
+
+        $buffer = $writer->getBuffer();
+        $buffer->rewind();
+
+        $stream = $buffer->getStream();
+
+        $reader = Reader::fromString($stream)->read();
+
+        $this->checkHeader($data['header'], $reader);
+
+        $index = 0;
+        foreach ($data['variables'] as $var) {
+            /** @var Record\Variable $_var */
+            $_var = $reader->variables[$index];
+
+            // TODO: test long variables
+            // $this->assertEquals($var['name'], $_var->name);
+
+            $this->assertEquals($var['format'], $_var->print[1]);
+            $this->assertEquals($var['width'], $_var->print[2]);
+
+            $index++;
+        }
+    }
+
 }

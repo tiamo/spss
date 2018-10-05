@@ -191,8 +191,8 @@ class Variable extends Record
             $buffer->writeInt(-1);
             $buffer->writeInt(0);
             $buffer->writeInt(0);
-            $buffer->writeInt(0);
-            $buffer->writeInt(0);
+            $buffer->writeInt(0x011d01);
+            $buffer->writeInt(0x011d01);
             $buffer->write('        ');
         }
     }
@@ -207,6 +207,7 @@ class Variable extends Record
         $name = $this->name;
         $name = mb_substr($name, 0, 8);
         $name = mb_substr($name, 0, -mb_strlen($seg)) . $seg;
+
         return mb_strtoupper($name);
     }
 }

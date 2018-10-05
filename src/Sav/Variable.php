@@ -60,7 +60,7 @@ class Variable
     const ROLE_SPLIT = 5;
 
     public $name;
-    public $width = 0;
+    public $width = 8;
     public $decimals = 0;
     public $format = 0;
     public $columns;

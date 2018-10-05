@@ -92,22 +92,33 @@ class Writer
 
         $this->data = new Record\Data();
 
+        $nominalIdx = 0;
+
         /** @var Variable $var */
-        foreach ($data['variables'] as $idx => $var) {
+        // for ($idx = 0; $idx <= $variablesCount; $idx++) {
+        foreach (array_values($data['variables']) as $idx => $var) {
 
             if (is_array($var)) {
                 $var = new Variable($var);
             }
 
             if (! preg_match('/^[A-Za-z0-9_]+$/', $var->name)) {
-                throw new \Exception(
+                throw new \InvalidArgumentException(
                     sprintf('Variable name `%s` contains an illegal character.', $var->name)
                 );
             }
 
+            if (empty($var->width)) {
+                throw new \InvalidArgumentException(
+                    sprintf('Invalid field width. Should be an integer number greater than zero.')
+                );
+            }
+
             $variable = new Record\Variable();
+
+            // TODO: refactory
             $variable->name = 'V' . str_pad($idx + 1, 7, 0, STR_PAD_LEFT);
-            // $variable->name = $var->name;
+            // $variable->name = strtoupper($var->name);
 
             // TODO: test
             if ($var->format == Variable::FORMAT_TYPE_A) {
@@ -153,7 +164,7 @@ class Writer
                 }
             }
 
-            $this->variables[] = $variable;
+            $this->variables[$idx] = $variable;
 
             if ($var->values) {
                 if ($variable->width > 8) {
@@ -170,7 +181,7 @@ class Writer
                             'value' => $key,
                             'label' => $value,
                         ];
-                        $valueLabel->indexes = [$idx + 1];
+                        $valueLabel->indexes = [$nominalIdx + 1];
                     }
                     $this->valueLabels[] = $valueLabel;
                 }
@@ -183,7 +194,6 @@ class Writer
             }
 
             $segmentCount = Utils::widthToSegments($var->width);
-
             for ($i = 0; $i < $segmentCount; $i++) {
                 $this->info[Record\Info\VariableDisplayParam::SUBTYPE][$idx] = [
                     $var->getMeasure(),
@@ -192,6 +202,7 @@ class Writer
                 ];
             }
 
+            // TODO: refactory
             $dataCount = count($var->data);
             if ($dataCount > $this->header->casesCount) {
                 $this->header->casesCount = $dataCount;
@@ -201,8 +212,10 @@ class Writer
                 $this->data->matrix[$case][$idx] = $value;
             }
 
-            $this->header->nominalCaseSize += Utils::widthToOcts($var->width);
+            $nominalIdx += Utils::widthToOcts($var->width);
         }
+
+        $this->header->nominalCaseSize = $nominalIdx;
 
         // write header
         $this->header->write($this->buffer);

@@ -11,11 +11,6 @@ class VeryLongString extends Info
     const DELIMITER = "\t";
 
     /**
-     * @var array
-     */
-    public $data = [];
-
-    /**
      * @param Buffer $buffer
      */
     public function read(Buffer $buffer)

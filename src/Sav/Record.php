@@ -4,15 +4,11 @@ namespace SPSS\Sav;
 
 use SPSS\Buffer;
 
-abstract class Record
+abstract class Record implements RecordInterface
 {
     /**
-     * @var int Record type code
-     */
-    const TYPE = 0;
-
-    /**
      * Record constructor.
+     *
      * @param array $data
      */
     public function __construct($data = [])
@@ -24,24 +20,22 @@ abstract class Record
 
     /**
      * @param Buffer $buffer
+     * @param array $data
      * @return static
      */
-    public static function fill(Buffer $buffer)
+    public static function fill(Buffer $buffer, $data = [])
     {
-        $record = new static();
+        $record = new static($data);
         $record->read($buffer);
+
         return $record;
     }
 
     /**
-     * @param Buffer $buffer
-     * @return void
+     * @return array
      */
-    abstract public function read(Buffer $buffer);
-
-    /**
-     * @param Buffer $buffer
-     * @return void
-     */
-    abstract public function write(Buffer $buffer);
+    public function toArray()
+    {
+        return [];
+    }
 }

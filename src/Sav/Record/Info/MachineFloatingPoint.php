@@ -5,6 +5,11 @@ namespace SPSS\Sav\Record\Info;
 use SPSS\Buffer;
 use SPSS\Sav\Record\Info;
 
+// Available as of PHP 7.2.0.
+if (! defined('PHP_FLOAT_MAX')) {
+    define('PHP_FLOAT_MAX', 1.7976931348623e+308);
+}
+
 class MachineFloatingPoint extends Info
 {
     const SUBTYPE = 4;
@@ -12,7 +17,7 @@ class MachineFloatingPoint extends Info
     /**
      * @var double
      */
-    public $sysmis = -1.7976931348623E+308;
+    public $sysmis;
 
     /**
      * @var double
@@ -50,9 +55,21 @@ class MachineFloatingPoint extends Info
      */
     public function write(Buffer $buffer)
     {
+        if (! $this->sysmis) {
+            $this->sysmis = -PHP_FLOAT_MAX;
+        }
+
+        if (! $this->highest) {
+            $this->highest = PHP_FLOAT_MAX;
+        }
+
+        if (! $this->lowest) {
+            $this->lowest = -PHP_FLOAT_MAX;
+        }
+
         parent::write($buffer);
         $buffer->writeDouble($this->sysmis);
-        $buffer->writeDouble($this->highest ? $this->highest : -$this->sysmis);
-        $buffer->writeDouble($this->lowest ? $this->lowest : -$this->sysmis);
+        $buffer->writeDouble($this->highest);
+        $buffer->writeDouble($this->lowest);
     }
 }

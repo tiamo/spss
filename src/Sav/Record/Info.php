@@ -5,10 +5,15 @@ namespace SPSS\Sav\Record;
 use SPSS\Buffer;
 use SPSS\Sav\Record;
 
-abstract class Info extends Record
+class Info extends Record implements \ArrayAccess
 {
     const TYPE = 7;
     const SUBTYPE = 0;
+
+    /**
+     * @var array
+     */
+    protected $data = [];
 
     /**
      * @var int Size of each piece of data in the data part, in bytes
@@ -38,5 +43,48 @@ abstract class Info extends Record
         $buffer->writeInt(static::SUBTYPE);
         $buffer->writeInt($this->dataSize);
         $buffer->writeInt($this->dataCount);
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        return (array) $this->data;
+    }
+
+    /**
+     * @param mixed $offset
+     * @return bool
+     */
+    public function offsetExists($offset)
+    {
+        return isset($this->data[$offset]);
+    }
+
+    /**
+     * @param mixed $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->data[$offset];
+    }
+
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     */
+    public function offsetSet($offset, $value)
+    {
+        $this->data[$offset] = $value;
+    }
+
+    /**
+     * @param mixed $offset
+     */
+    public function offsetUnset($offset)
+    {
+        unset($this->data[$offset]);
     }
 }

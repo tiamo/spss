@@ -10,12 +10,8 @@ class LongStringMissingValues extends Info
     const SUBTYPE = 22;
 
     /**
-     * @var array
-     */
-    public $data = [];
-
-    /**
-     * @param Buffer $buffer
+     * @param \SPSS\Buffer $buffer
+     * @throws \SPSS\Exception
      */
     public function read(Buffer $buffer)
     {
@@ -41,7 +37,7 @@ class LongStringMissingValues extends Info
         if ($this->data) {
             $localBuffer = Buffer::factory();
             foreach ($this->data as $varName => $values) {
-                $localBuffer->writeInt(strlen($varName));
+                $localBuffer->writeInt(mb_strlen($varName));
                 $localBuffer->writeString($varName);
                 $localBuffer->write(chr(count($values)), 1);
                 $localBuffer->writeInt(8);

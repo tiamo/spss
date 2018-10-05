@@ -22,6 +22,7 @@ class LongVariableNames extends Info
     {
         parent::read($buffer);
         $data = rtrim($buffer->readString($this->dataSize * $this->dataCount));
+
         foreach (explode(self::DELIMITER, $data) as $item) {
             list($key, $value) = explode('=', $item);
             $this->data[$key] = trim($value);

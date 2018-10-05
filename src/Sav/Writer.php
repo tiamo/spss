@@ -3,6 +3,8 @@
 namespace SPSS\Sav;
 
 use SPSS\Buffer;
+use SPSS\Exception;
+use SPSS\Utils;
 
 class Writer
 {
@@ -43,34 +45,48 @@ class Writer
 
     /**
      * Writer constructor.
+     *
      * @param array $data
+     * @throws \Exception
      */
     public function __construct($data = [])
     {
         $this->buffer = Buffer::factory();
         $this->buffer->context = $this;
 
-        if (!empty($data)) {
-            $this->init($data);
+        if (! empty($data)) {
+            $this->write($data);
         }
     }
 
     /**
      * @param array $data
+     * @throws \Exception
      */
-    public function init($data)
+    public function write($data)
     {
         $this->header = new Record\Header($data['header']);
         $this->header->nominalCaseSize = 0;
         $this->header->casesCount = 0;
 
-        $this->document = new Record\Document();
+        $this->info[Record\Info\MachineInteger::SUBTYPE] = $this->prepareInfoRecord(
+            Record\Info\MachineInteger::class,
+            $data
+        );
 
-        $this->info[Record\Info\MachineInteger::SUBTYPE] = new Record\Info\MachineInteger();
-        $this->info[Record\Info\MachineFloatingPoint::SUBTYPE] = new Record\Info\MachineFloatingPoint();
+        $this->info[Record\Info\MachineFloatingPoint::SUBTYPE] = $this->prepareInfoRecord(
+            Record\Info\MachineFloatingPoint::class,
+            $data
+        );
+
         $this->info[Record\Info\VariableDisplayParam::SUBTYPE] = new Record\Info\VariableDisplayParam();
         $this->info[Record\Info\LongVariableNames::SUBTYPE] = new Record\Info\LongVariableNames();
         $this->info[Record\Info\VeryLongString::SUBTYPE] = new Record\Info\VeryLongString();
+        $this->info[Record\Info\ExtendedNumberOfCases::SUBTYPE] = $this->prepareInfoRecord(
+            Record\Info\ExtendedNumberOfCases::class,
+            $data
+        );
+        $this->info[Record\Info\VariableAttributes::SUBTYPE] = new Record\Info\VariableAttributes();
         $this->info[Record\Info\LongStringValueLabels::SUBTYPE] = new Record\Info\LongStringValueLabels();
         $this->info[Record\Info\LongStringMissingValues::SUBTYPE] = new Record\Info\LongStringMissingValues();
 
@@ -83,14 +99,44 @@ class Writer
                 $var = new Variable($var);
             }
 
-            $shortName = strtoupper(substr($var->name, 0, 8));
+            if (! preg_match('/^[A-Za-z0-9_]+$/', $var->name)) {
+                throw new \Exception(
+                    sprintf('Variable name `%s` contains an illegal character.', $var->name)
+                );
+            }
 
             $variable = new Record\Variable();
-            $variable->name = $shortName;
-            $variable->width = $var->width;
+            $variable->name = 'V' . str_pad($idx + 1, 7, 0, STR_PAD_LEFT);
+            // $variable->name = $var->name;
+
+            // TODO: test
+            if ($var->format == Variable::FORMAT_TYPE_A) {
+                $variable->width = $var->width;
+            } else {
+                $variable->width = 0;
+            }
+
             $variable->label = $var->label;
-            $variable->print = [$var->decimals, $var->width ? min($var->width, 255) : 8, $var->format, 0];
-            $variable->write = [$var->decimals, $var->width ? min($var->width, 255) : 8, $var->format, 0];
+            $variable->print = [
+                0,
+                $var->format,
+                $var->width ? min($var->width, 255) : 8,
+                $var->decimals,
+            ];
+            $variable->write = [
+                0,
+                $var->format,
+                $var->width ? min($var->width, 255) : 8,
+                $var->decimals,
+            ];
+
+            // TODO: refactory
+            $shortName = $variable->name;
+            $longName = $var->name;
+
+            if ($var->attributes) {
+                $this->info[Record\Info\VariableAttributes::SUBTYPE][$longName] = $var->attributes;
+            }
 
             if ($var->missing) {
                 if ($var->width <= 8) {
@@ -103,40 +149,46 @@ class Writer
                     }
                     $variable->missingValues = $var->missing;
                 } else {
-                    $this->info[Record\Info\LongStringMissingValues::SUBTYPE]->data[$shortName] = $var->missing;
+                    $this->info[Record\Info\LongStringMissingValues::SUBTYPE][$shortName] = $var->missing;
                 }
             }
 
+            $this->variables[] = $variable;
+
             if ($var->values) {
-                if ($var->width > 8) {
-                    $this->info[Record\Info\LongStringValueLabels::SUBTYPE]->data[$shortName] = [
-                        'width'  => $var->width,
-                        'values' => $var->values
+                if ($variable->width > 8) {
+                    $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName] = [
+                        'width' => $var->width,
+                        'values' => $var->values,
                     ];
                 } else {
-                    $valueLabel = new Record\ValueLabel();
+                    $valueLabel = new Record\ValueLabel([
+                        'variables' => $this->variables,
+                    ]);
                     foreach ($var->values as $key => $value) {
-                        $valueLabel->vars = [$idx + 1];
-                        $valueLabel->data[] = [
-                            'value' => $var->width > 0 ? Buffer::stringToDouble($key) : $key,
-                            'label' => $value
+                        $valueLabel->labels[] = [
+                            'value' => $key,
+                            'label' => $value,
                         ];
+                        $valueLabel->indexes = [$idx + 1];
                     }
                     $this->valueLabels[] = $valueLabel;
                 }
             }
 
-            if (Record\Variable::isVeryLong($var->width)) {
-                $this->info[Record\Info\VeryLongString::SUBTYPE]->data[$shortName] = $var->width;
-            }
-            $this->info[Record\Info\LongVariableNames::SUBTYPE]->data[$shortName] = $var->name;
+            $this->info[Record\Info\LongVariableNames::SUBTYPE][$shortName] = $var->name;
 
-            $segmentCount = Record\Variable::widthToSegments($var->width);
+            if (Record\Variable::isVeryLong($var->width)) {
+                $this->info[Record\Info\VeryLongString::SUBTYPE][$shortName] = $var->width;
+            }
+
+            $segmentCount = Utils::widthToSegments($var->width);
+
             for ($i = 0; $i < $segmentCount; $i++) {
-                $this->info[Record\Info\VariableDisplayParam::SUBTYPE]->data[] = [
-                    $var->measure,
-                    $var->columns,
-                    $var->align,
+                $this->info[Record\Info\VariableDisplayParam::SUBTYPE][$idx] = [
+                    $var->getMeasure(),
+                    $var->getColumns(),
+                    $var->getAlignment(),
                 ];
             }
 
@@ -149,25 +201,35 @@ class Writer
                 $this->data->matrix[$case][$idx] = $value;
             }
 
-            $this->header->nominalCaseSize += Record\Variable::widthToOcts($var->width);
-            $this->variables[] = $variable;
+            $this->header->nominalCaseSize += Utils::widthToOcts($var->width);
         }
 
+        // write header
         $this->header->write($this->buffer);
 
+        // write variables
         foreach ($this->variables as $variable) {
             $variable->write($this->buffer);
         }
+
+        // write valueLabels
         foreach ($this->valueLabels as $valueLabel) {
             $valueLabel->write($this->buffer);
         }
-        if (!empty($data['documents'])) {
-            $this->document->lines = $data['documents'];
+
+        // write documents
+        if (! empty($data['documents'])) {
+            $this->document = new Record\Document([
+                    'lines' => $data['documents'],
+                ]
+            );
             $this->document->write($this->buffer);
         }
+
         foreach ($this->info as $info) {
             $info->write($this->buffer);
         }
+
         $this->data->write($this->buffer);
     }
 
@@ -178,5 +240,34 @@ class Writer
     public function save($file)
     {
         return $this->buffer->saveToFile($file);
+    }
+
+    /**
+     * @return \SPSS\Buffer
+     */
+    public function getBuffer()
+    {
+        return $this->buffer;
+    }
+
+    /**
+     * @param string $className
+     * @param array $data
+     * @param string $group
+     * @return array
+     * @throws Exception
+     */
+    private function prepareInfoRecord($className, $data, $group = 'info')
+    {
+        if (! class_exists($className)) {
+            throw new Exception('Unknown class');
+        }
+        $key = lcfirst(substr($className, strrpos($className, '\\') + 1));
+
+        return new $className(
+            isset($data[$group]) && isset($data[$group][$key]) ?
+                $data[$group][$key] :
+                []
+        );
     }
 }

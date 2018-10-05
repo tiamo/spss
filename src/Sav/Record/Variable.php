@@ -4,6 +4,7 @@ namespace SPSS\Sav\Record;
 
 use SPSS\Buffer;
 use SPSS\Sav\Record;
+use SPSS\Utils;
 
 class Variable extends Record
 {
@@ -15,58 +16,66 @@ class Variable extends Record
     const REAL_VLS_CHUNK = 255;
 
     /**
-     * Number of bytes per segment by which the amount of space for very long string variables is allocated
+     * Number of bytes per segment by which the amount of space for very long string variables is allocated.
      */
     const EFFECTIVE_VLS_CHUNK = 252;
 
     /**
-     * @var int Variable width.
      * Set to 0 for a numeric variable.
      * For a short string variable or the first part of a long string variable, this is set to the width of the string.
      * For the second and subsequent parts of a long string variable, set to -1, and the remaining fields in the structure are ignored.
+     *
+     * @var int Variable width.
      */
     public $width;
 
     /**
-     * @var int
      * If the variable has no missing values, set to 0.
      * If the variable has one, two, or three discrete missing values, set to 1, 2, or 3, respectively.
      * If the variable has a range for missing variables, set to -2;
      * if the variable has a range for missing variables plus a single discrete value, set to -3.
      * A long string variable always has the value 0 here.
-     * A separate record indicates missing values for long string variables @see \SPSS\Sav\Record\Info\LongStringMissingValues
+     * A separate record indicates missing values for long string variables
+     *
+     * @var int
+     * @see \SPSS\Sav\Record\Info\LongStringMissingValues
      */
     public $missingValuesFormat = 0;
 
     /**
-     * @var array
      * Print format for this variable.
+     * [decimals, width, format, 0]
+     *
+     * @var array
      */
     public $print = [0, 0, 0, 0];
 
     /**
-     * @var array
      * Write format for this variable.
+     * [decimals, width, format, 0]
+     *
+     * @var array
      */
     public $write = [0, 0, 0, 0];
 
     /**
-     * @var string Variable name.
      * The variable name must begin with a capital letter or the at-sign (‘@’).
      * Subsequent characters may also be digits, octothorpes (‘#’), dollar signs (‘$’), underscores (‘_’), or full stops (‘.’).
      * The variable name is padded on the right with spaces.
+     *
+     * @var string Variable name.
      */
     public $name;
 
     /**
-     * @var string
      * It has length label_len, rounded up to the nearest multiple of 32 bits.
      * The first label_len characters are the variable’s variable label.
+     *
+     * @var string
      */
     public $label;
 
     /**
-     * @var array
      * It has the same number of 8-byte elements as the absolute value of $missingValuesFormat.
      * Each element is interpreted as a number for numeric variables (with HIGHEST and LOWEST indicated as described in the chapter introduction).
      * For string variables of width less than 8 bytes, elements are right-padded with spaces;
@@ -76,8 +85,21 @@ class Variable extends Record
      * When a range is present, the first element denotes the minimum value in the range,
      * and the second element denotes the maximum value in the range.
      * When a range plus a value are present, the third element denotes the additional discrete missing value.
+     *
+     * @var array
      */
     public $missingValues = [];
+
+    /**
+     * Returns true if WIDTH is a very long string width, false otherwise.
+     *
+     * @param int $width
+     * @return int
+     */
+    public static function isVeryLong($width)
+    {
+        return $width > self::REAL_VLS_CHUNK;
+    }
 
     /**
      * @param Buffer $buffer
@@ -87,8 +109,8 @@ class Variable extends Record
         $this->width = $buffer->readInt();
         $hasLabel = $buffer->readInt();
         $this->missingValuesFormat = $buffer->readInt();
-        $this->print = Buffer::intToBytes($buffer->readInt());
-        $this->write = Buffer::intToBytes($buffer->readInt());
+        $this->print = Utils::intToBytes($buffer->readInt());
+        $this->write = Utils::intToBytes($buffer->readInt());
         $this->name = rtrim($buffer->readString(8));
         if ($hasLabel) {
             $labelLength = $buffer->readInt();
@@ -106,21 +128,24 @@ class Variable extends Record
      */
     public function write(Buffer $buffer)
     {
-        $seg0width = self::segmentAllocWidth($this->width, 0);
-        $hasLabel = !empty($this->label);
+        $seg0width = Utils::segmentAllocWidth($this->width, 0);
+        $hasLabel = ! empty($this->label);
 
         $buffer->writeInt(self::TYPE);
         $buffer->writeInt($seg0width);
         $buffer->writeInt($hasLabel ? 1 : 0);
         $buffer->writeInt($this->missingValuesFormat);
-        $buffer->writeInt(Buffer::bytesToInt($this->print));
-        $buffer->writeInt(Buffer::bytesToInt($this->write));
+        $buffer->writeInt(Utils::bytesToInt($this->print));
+        $buffer->writeInt(Utils::bytesToInt($this->write));
         $buffer->writeString($this->name, 8);
+
         if ($hasLabel) {
-            $labelLength = strlen($this->label);
+            $labelLength = min(mb_strlen($this->label), 255);
             $buffer->writeInt($labelLength);
-            $buffer->writeString($this->label, Buffer::roundUp($labelLength, 4));
+            $buffer->writeString($this->label, Utils::roundUp($labelLength, 4));
         }
+
+        // TODO: test
         if ($this->missingValuesFormat) {
             foreach ($this->missingValues as $val) {
                 if ($this->width == 0) {
@@ -130,20 +155,25 @@ class Variable extends Record
                 }
             }
         }
+
         $this->writeBlank($buffer, $seg0width);
+
+        // Write additional segments for very long string variables.
         if (self::isVeryLong($this->width)) {
-            $countSegments = self::widthToSegments($this->width);
-            for ($i = 1; $i < $countSegments; $i++) {
-                $segWidth = self::segmentAllocWidth($this->width, $i);
+            $segmentCount = Utils::widthToSegments($this->width);
+            for ($i = 1; $i < $segmentCount; $i++) {
+                $segmentWidth = Utils::segmentAllocWidth($this->width, $i);
+                $format = Utils::bytesToInt([0, max($segmentWidth, 1), 1, 0]);
+
                 $buffer->writeInt(self::TYPE);
-                $buffer->writeInt($segWidth);
-                $buffer->writeInt(0);
-                $buffer->writeInt(0);
-                $buffer->writeInt(0);
-                $buffer->writeInt(0);
-                $buffer->writeString($this->name, 8); // TODO: unique name
-//                $buffer->writeString(substr($this->name, 0, - strlen($i)) . $i, 8);
-                $this->writeBlank($buffer, $segWidth);
+                $buffer->writeInt($segmentWidth);
+                $buffer->writeInt(0); // No variable label
+                $buffer->writeInt(0); // No missing values
+                $buffer->writeInt($format); // Print format
+                $buffer->writeInt($format); // Write format
+                $buffer->writeString($this->getSegmentName($i), 8);
+
+                $this->writeBlank($buffer, $segmentWidth);
             }
         }
     }
@@ -154,6 +184,8 @@ class Variable extends Record
      */
     public function writeBlank(Buffer $buffer, $width)
     {
+        // assert(self::widthToSegments($width) == 1);
+
         for ($i = 8; $i < $width; $i += 8) {
             $buffer->writeInt(self::TYPE);
             $buffer->writeInt(-1);
@@ -166,95 +198,15 @@ class Variable extends Record
     }
 
     /**
-     * @return int
+     * @param int $seg
+     * @return string
      */
-    public function getPrintDecimals()
+    public function getSegmentName($seg = 0)
     {
-        return $this->print[0];
-    }
-
-    /**
-     * @return int
-     */
-    public function getPrintWidth()
-    {
-        return $this->print[1];
-    }
-
-    /**
-     * @return int
-     */
-    public function getPrintFormat()
-    {
-        return $this->print[2];
-    }
-
-
-    /**
-     * Returns true if WIDTH is a very long string width, false otherwise.
-     * @param int $width
-     * @return int
-     */
-    public static function isVeryLong($width)
-    {
-        return $width > self::REAL_VLS_CHUNK;
-    }
-
-    /**
-     * Returns the number of bytes of uncompressed case data used for writing a variable of the given WIDTH to a system file.
-     * All required space is included, including trailing padding and internal padding.
-     * @param int $width
-     * @return int
-     */
-    public static function widthToBytes($width)
-    {
-        if ($width == 0) {
-            $bytes = 8;
-        } elseif (!self::isVeryLong($width)) {
-            $bytes = $width;
-        } else {
-            $chunks = floor($width / self::EFFECTIVE_VLS_CHUNK);
-            $remainder = $width % self::EFFECTIVE_VLS_CHUNK;
-            $bytes = $remainder + ($chunks * Buffer::roundUp(self::REAL_VLS_CHUNK, 8));
-        }
-        return Buffer::roundUp($bytes, 8);
-    }
-
-    /**
-     * Returns the number of 8-byte units (octs) used to write data for a variable of the given WIDTH.
-     * @param int $width
-     * @return int
-     */
-    public static function widthToOcts($width)
-    {
-        return self::widthToBytes($width) / 8;
-    }
-
-    /**
-     * Returns the number of "segments" used for writing case data for a variable of the given WIDTH.
-     * A segment is a physical variable in the system file that represents some piece of a logical variable.
-     * Only very long string variables have more than one segment.
-     * @param int $width
-     * @return int
-     */
-    public static function widthToSegments($width)
-    {
-        return self::isVeryLong($width) ? ceil($width / self::EFFECTIVE_VLS_CHUNK) : 1;
-    }
-
-    /**
-     * Returns the width to allocate to the given SEGMENT within a variable of the given WIDTH.
-     * A segment is a physical variable in the system file that represents some piece of a logical variable.
-     * @param int $width
-     * @param int $segment
-     * @return int
-     */
-    public static function segmentAllocWidth($width, $segment)
-    {
-        return self::isVeryLong($width) ?
-            ($segment < self::widthToSegments($width) - 1 ?
-                self::REAL_VLS_CHUNK :
-                $width - $segment * self::EFFECTIVE_VLS_CHUNK) :
-            $width;
+        // TODO: refactory
+        $name = $this->name;
+        $name = mb_substr($name, 0, 8);
+        $name = mb_substr($name, 0, -mb_strlen($seg)) . $seg;
+        return mb_strtoupper($name);
     }
 }

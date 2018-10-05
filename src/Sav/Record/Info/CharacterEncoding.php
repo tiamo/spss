@@ -12,7 +12,7 @@ class CharacterEncoding extends Info
     /**
      * @var string
      */
-    public $data;
+    public $value;
 
     /**
      * @param Buffer $buffer
@@ -20,7 +20,7 @@ class CharacterEncoding extends Info
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
-        $this->data = $buffer->readString($this->dataSize * $this->dataCount);
+        $this->value = $buffer->readString($this->dataSize * $this->dataCount);
     }
 
     /**
@@ -28,8 +28,8 @@ class CharacterEncoding extends Info
      */
     public function write(Buffer $buffer)
     {
-        $this->dataCount = strlen($this->data);
+        $this->dataCount = strlen($this->value);
         parent::write($buffer);
-        $buffer->writeString($this->data);
+        $buffer->writeString($this->value);
     }
 }

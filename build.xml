@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="SPSS" default="options">
+    <property name="bindir" value="${project.basedir}/vendor/bin/" override="false"/>
+
+    <target name="options" description="Options for phing">
+        <echo msg="run ./phing --help or ./phing -l ; Option for phing required: test | check | coverage | all"/>
+    </target>
+
+    <target name="codestyle" description="Executes the coding style sniffer">
+        <echo msg="Executing the coding style sniffer"/>
+        <exec command="${bindir}phpcs -n src tests"
+              checkreturn="true"
+              logoutput="true"
+        />
+    </target>
+
+    <target name="test" description="Executes the unit tests">
+        <echo msg="Executing unit tests"/>
+        <exec command="./runTests.sh" dir="tests" checkreturn="true" logoutput="true"/>
+    </target>
+
+    <!--<target name="coverage" description="Generates the code coverage using the unit tests">-->
+    <!--<echo msg="Generates the code coverage report using the unit tests" />-->
+    <!--<delete file="${project.basedir}/tests/tmp/phing-unittest.log" quiet="true" failonerror="false" />-->
+    <!--<delete dir="${project.basedir}/docs/CodeCoverage/*" quiet="true" failonerror="false" />-->
+    <!--<exec command="./runCoverage.sh" dir="tests" checkreturn="true" logoutput="true" />-->
+    <!--</target>-->
+
+    <target name="all" depends="test" description="Execute all parts of the package">
+    </target>
+
+</project>

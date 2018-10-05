@@ -29,10 +29,5 @@
       "SPSS\\": "src/",
       "SPSS\\Tests\\": "tests/"
     }
-  },
-  "extra": {
-    "branch-alias": {
-      "dev-master": "2.0.x-dev"
-    }
   }
 }

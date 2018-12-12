@@ -6,16 +6,11 @@ use SPSS\Sav\Reader;
 use SPSS\Sav\Writer;
 
 class WriteMultibyteTest extends TestCase
-{   
-    public function setUp()
-    {
-        parent::setUp();
-        $this->filename = __DIR__ . '/mbtest.sav';
-    }
-    
+{
+
     public function testMultiByteLabel()
     {
-        $data = [
+        $data   = [
             'header'    => [
                 'prodName'     => '@(#) IBM SPSS STATISTICS',
                 'layoutCode'   => 2,
@@ -41,18 +36,16 @@ class WriteMultibyteTest extends TestCase
         ];
         $writer = new Writer($data);
 
-        $writer->save($file);
-        $reader = Reader::fromFile($file)->read();
-        
+        $buffer = $writer->getBuffer();
+        $buffer->rewind();
+
+        $reader = Reader::fromString($buffer->getStream())->read();
+
         // Sort name
         $this->assertEquals($data['variables'][0]['label'], $reader->variables[0]->label);
-        
+
         // Long name
-        $this->assertEquals(mb_substr($data['variables'][1]['label'],0,-1), $reader->variables[1]->label);
+        $this->assertEquals(mb_substr($data['variables'][1]['label'], 0, -1), $reader->variables[1]->label);
     }
-    
-    public function tearDown()
-    {
-        unlink($this->filename);
-    }
+
 }

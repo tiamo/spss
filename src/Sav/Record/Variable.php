@@ -140,9 +140,17 @@ class Variable extends Record
         $buffer->writeString($this->name, 8);
 
         if ($hasLabel) {
+            // Maxlength is 255 bytes, since we write utf8 a char can be multiple bytes
             $labelLength = min(mb_strlen($this->label), 255);
-            $buffer->writeInt($labelLength);
-            $buffer->writeString($this->label, Utils::roundUp($labelLength, 4));
+            $label = mb_substr($this->label, 0, $labelLength);
+            $labelLengthBytes = mb_strlen($label, '8bit');
+            while ($labelLengthBytes > 255) {
+                // Strip one char, can be multiple bytes
+                $label = mb_substr($this->label, 0, -1);
+                $labelLengthBytes = mb_strlen($label, '8bit');
+            }
+            $buffer->writeInt($labelLengthBytes);
+            $buffer->writeString($label, Utils::roundUp($labelLengthBytes, 4));
         }
 
         // TODO: test
@@ -156,7 +164,8 @@ class Variable extends Record
             }
         }
 
-        $this->writeBlank($buffer, $seg0width);
+        // I think we don't need an empty record
+        //$this->writeBlank($buffer, $seg0width);
 
         // Write additional segments for very long string variables.
         if (self::isVeryLong($this->width)) {

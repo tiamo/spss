@@ -126,7 +126,8 @@ class SavRandomReadWriteTest extends TestCase
             //         )
             //     );
             // }
-            $index += $var['width'] > 0 ? Utils::widthToOcts($var['width']) : 1;
+            //$index += $var['width'] > 0 ? Utils::widthToOcts($var['width']) : 1;
+            $index++;
         }
 
         // TODO: valueLabels

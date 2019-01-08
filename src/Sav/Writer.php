@@ -212,7 +212,7 @@ class Writer
                 $this->data->matrix[$case][$idx] = $value;
             }
 
-            $nominalIdx += Utils::widthToOcts($var->width);
+            $nominalIdx += Utils::widthToOcts($variable->width);
         }
 
         $this->header->nominalCaseSize = $nominalIdx;

@@ -113,7 +113,7 @@ class ValueLabel extends Record
             $labelLengthBytes = mb_strlen($label, '8bit');
             while ($labelLengthBytes > 255) {
                 // Strip one char, can be multiple bytes
-                $label = mb_substr($item['label'], 0, -1);
+                $label = mb_substr($label, 0, -1);
                 $labelLengthBytes = mb_strlen($label, '8bit');
             }
 

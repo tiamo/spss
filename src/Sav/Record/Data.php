@@ -89,7 +89,7 @@ class Data extends Record
             foreach ($variables as $index => $var) {
 
                 $isNumeric = $var->width == 0;
-                $width = isset($var->write[1]) ? $var->write[1] : $var->width;
+                $width = isset($var->write[2]) ? $var->write[2] : $var->width;
 
                 // var_dump($var);
                 // exit;
@@ -119,47 +119,49 @@ class Data extends Record
                         }
                     }
                 } else {
-                    $val = '';
-                    if (! $compressed) {
-                        $val = $buffer->readString(8);
-                    } else {
-                        $opcode = $this->readOpcode($buffer);
-                        switch ($opcode) {
-                            case self::OPCODE_NOP;
-                                break;
-                            case self::OPCODE_EOF;
-                                throw new Exception(
-                                    'Error reading data: unexpected end of compressed data file (cluster code 252)'
-                                );
-                                break;
-                            case self::OPCODE_RAW_DATA;
-                                $val = $buffer->readString(8);
-                                break;
-                            case self::OPCODE_WHITESPACES;
-                                $val = '        ';
-                                break;
-                        }
-                    }
-
-                    if ($parent >= 0) {
-                        $this->matrix[$case][$parent] .= $val;
-                        $octs--;
-                        if ($octs <= 0) {
-                            $this->matrix[$case][$parent] = rtrim($this->matrix[$case][$parent]);
-                            $parent = -1;
-                        }
-                    } else {
-                        $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
-                        if ($width > 0) {
-                            $octs = Utils::widthToOcts($width) - 1; // Buffer::roundUp($width, 8) / 8) -1;
-                            if ($octs > 0) {
-                                $parent = $index;
-                            } else {
-                                $val = rtrim($val);
+                    do {
+                        $val = '';
+                        if (! $compressed) {
+                            $val = $buffer->readString(8);
+                        } else {
+                            $opcode = $this->readOpcode($buffer);
+                            switch ($opcode) {
+                                case self::OPCODE_NOP;
+                                    break;
+                                case self::OPCODE_EOF;
+                                    throw new Exception(
+                                        'Error reading data: unexpected end of compressed data file (cluster code 252)'
+                                    );
+                                    break;
+                                case self::OPCODE_RAW_DATA;
+                                    $val = $buffer->readString(8);
+                                    break;
+                                case self::OPCODE_WHITESPACES;
+                                    $val = '        ';
+                                    break;
                             }
-                            $this->matrix[$case][$index] = $val;
                         }
-                    }
+                    
+                        if ($parent >= 0) {
+                            $this->matrix[$case][$parent] .= $val;
+                            $octs--;
+                            if ($octs <= 0) {
+                                $this->matrix[$case][$parent] = rtrim($this->matrix[$case][$parent]);
+                                $parent = -1;
+                            }
+                        } else {
+                            $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                            if ($width > 0) {
+                                $octs = Utils::widthToOcts($width) - 1; // Buffer::roundUp($width, 8) / 8) -1;
+                                if ($octs > 0) {
+                                    $parent = $index;
+                                } else {
+                                    $val = rtrim($val);
+                                }
+                                $this->matrix[$case][$index] = $val;
+                            }
+                        }
+                    } while ($octs > 0);
                 }
             }
         }
@@ -246,7 +248,7 @@ class Data extends Record
                             $segWidth = Utils::segmentAllocWidth($width, $s);
                             for ($i = $segWidth; $i > 0; $i -= 8, $offset += 8) {
                                 // $chunkSize = min($i, 8);
-                                $val = mb_substr($value, $offset, 8);
+                                $val = substr($value, $offset, 8);  // Read 8 byte segements, don't use mbsubstr here
                                 if ($val == "") {
                                     $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_WHITESPACES);
                                 } else {

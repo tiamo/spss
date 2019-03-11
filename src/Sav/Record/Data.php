@@ -276,7 +276,7 @@ class Data extends Record
             foreach ($this->opcodes as $opc) {
                 $buffer->write(chr($opc));
             }
-            $padding = max(8 - count($this->opcodes), 0);
+            $padding = 8 - count($this->opcodes) % 8;
             for ($i = 0; $i < $padding; $i++) {
                 $buffer->write(chr(self::OPCODE_NOP));
             }

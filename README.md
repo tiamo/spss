@@ -70,7 +70,7 @@ $writer = new \SPSS\Writer([
     ],
     'variables' => [
         [
-                'name'     => 'VAR1',
+                'name'     => 'VAR1', # For UTF-8, 64 / 3 = 21, mb_substr($var1, 0, 21);
                 'width'    => 0,
                 'decimals' => 0
                 'format'   => 5,

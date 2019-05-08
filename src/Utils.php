@@ -158,7 +158,7 @@ class Utils
         } else {
             $chunks = $width / Variable::EFFECTIVE_VLS_CHUNK;
             $remainder = $width % Variable::EFFECTIVE_VLS_CHUNK;
-            $bytes = $remainder + ($chunks * self::roundUp(Variable::REAL_VLS_CHUNK, 8));
+            $bytes = floor($chunks) * Variable::REAL_VLS_CHUNK + $remainder;
         }
 
         return self::roundUp($bytes, 8);

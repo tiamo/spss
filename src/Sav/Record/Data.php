@@ -86,8 +86,10 @@ class Data extends Record
         for ($case = 0; $case < $casesCount; $case++) {
             $parent = -1;
             $octs = 0;
-            foreach ($variables as $index => $var) {
-
+            $varCount = count($variables);
+            $varNum = 0;
+            for($index = 0; $index < $varCount; $index++) {
+                $var = $variables[$index];
                 $isNumeric = $var->width == 0;
                 $width = isset($var->write[2]) ? $var->write[2] : $var->width;
 
@@ -96,7 +98,7 @@ class Data extends Record
 
                 if ($isNumeric) {
                     if (! $compressed) {
-                        $this->matrix[$case][$index] = $buffer->readDouble();
+                        $this->matrix[$case][$varNum] = $buffer->readDouble();
                     } else {
                         $opcode = $this->readOpcode($buffer);
                         switch ($opcode) {
@@ -108,13 +110,13 @@ class Data extends Record
                                 );
                                 break;
                             case self::OPCODE_RAW_DATA;
-                                $this->matrix[$case][$index] = $buffer->readDouble();
+                                $this->matrix[$case][$varNum] = $buffer->readDouble();
                                 break;
                             case self::OPCODE_SYSMISS;
-                                $this->matrix[$case][$index] = $sysmis;
+                                $this->matrix[$case][$varNum] = $sysmis;
                                 break;
                             default:
-                                $this->matrix[$case][$index] = $opcode - $bias;
+                                $this->matrix[$case][$varNum] = $opcode - $bias;
                                 break;
                         }
                     }
@@ -143,10 +145,11 @@ class Data extends Record
                         }
                     
                         if ($parent >= 0) {
-                            $this->matrix[$case][$parent] .= $val;
+                            $this->matrix[$case][$varNum] .= $val;
                             $octs--;
+                            $index++;
                             if ($octs <= 0) {
-                                $this->matrix[$case][$parent] = rtrim($this->matrix[$case][$parent]);
+                                $this->matrix[$case][$varNum] = rtrim($this->matrix[$case][$varNum]);
                                 $parent = -1;
                             }
                         } else {
@@ -158,11 +161,12 @@ class Data extends Record
                                 } else {
                                     $val = rtrim($val);
                                 }
-                                $this->matrix[$case][$index] = $val;
+                                $this->matrix[$case][$varNum] = $val;
                             }
                         }
                     } while ($octs > 0);
                 }
+                $varNum++;
             }
         }
     }
@@ -208,13 +212,18 @@ class Data extends Record
 
         /** @var Record\Info[] $info */
         $info = $buffer->context->info;
+        
+        $veryLongStrings = [];
+        if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
+            $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
+        }
 
         if (isset($info[Record\Info\MachineFloatingPoint::SUBTYPE])) {
             $sysmis = $info[Record\Info\MachineFloatingPoint::SUBTYPE]->sysmis;
         } else {
             $sysmis = NAN;
         }
-
+        
         $dataBuffer = Buffer::factory('', ['memory' => true]);
 
         for ($case = 0; $case < $casesCount; $case++) {
@@ -243,20 +252,26 @@ class Data extends Record
                         $buffer->writeString($value, Utils::roundUp($width, 8));
                     } else {
                         $offset = 0;
+                        $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
                         $segmentsCount = Utils::widthToSegments($width);
                         for ($s = 0; $s < $segmentsCount; $s++) {
                             $segWidth = Utils::segmentAllocWidth($width, $s);
-                            for ($i = $segWidth; $i > 0; $i -= 8, $offset += 8) {
-                                // $chunkSize = min($i, 8);
-                                $val = substr($value, $offset, 8);  // Read 8 byte segements, don't use mbsubstr here
+                            for ($i = $segWidth; $i > 0; $i -= 8) {
+                                if ($segWidth = 255) {
+                                    $chunkSize = min($i, 8);
+                                } else {
+                                    $chunkSize = 8;
+                                }
+                                $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
                                 if ($val == "") {
                                     $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_WHITESPACES);
                                 } else {
                                     $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_RAW_DATA);
                                     $dataBuffer->writeString($val, 8);
                                 }
+                                $offset += $chunkSize;
                             }
-                        }
+                        }                        
                     }
                 }
             }

@@ -13,6 +13,16 @@ class CharacterEncoding extends Info
      * @var string
      */
     public $value;
+    
+    /**
+     * Record constructor.
+     *
+     * @param array $data
+     */
+    public function __construct($value)
+    {
+        $this->value = $value;
+    }
 
     /**
      * @param Buffer $buffer

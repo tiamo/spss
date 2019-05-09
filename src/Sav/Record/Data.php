@@ -121,50 +121,51 @@ class Data extends Record
                         }
                     }
                 } else {
-                    do {
-                        $val = '';
-                        if (! $compressed) {
-                            $val = $buffer->readString(8);
-                        } else {
-                            $opcode = $this->readOpcode($buffer);
-                            switch ($opcode) {
-                                case self::OPCODE_NOP;
-                                    break;
-                                case self::OPCODE_EOF;
-                                    throw new Exception(
-                                        'Error reading data: unexpected end of compressed data file (cluster code 252)'
-                                    );
-                                    break;
-                                case self::OPCODE_RAW_DATA;
-                                    $val = $buffer->readString(8);
-                                    break;
-                                case self::OPCODE_WHITESPACES;
-                                    $val = '        ';
-                                    break;
+                    $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                    $this->matrix[$case][$varNum] = '';
+                    $segmentsCount = Utils::widthToSegments($width);
+                    $opcode = self::OPCODE_RAW_DATA;
+                    $index = $index - 1;
+                    for ($s = 0; $s < $segmentsCount; $s++) {
+                        $segWidth = Utils::segmentAllocWidth($width, $s);
+                        $octs = Utils::widthToOcts($segWidth);
+                        $index = $index + $octs;    // Skip a few variables for this segment
+                        if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
+                            // If next segments are empty too, skip
+                            $continue;
+                        }                        
+                        for ($i = $segWidth; $i > 0; $i -= 8) {
+                            if ($segWidth = 255) {
+                                $chunkSize = min($i, 8);
+                            } else {
+                                $chunkSize = 8;
                             }
-                        }
-                    
-                        if ($parent >= 0) {
-                            $this->matrix[$case][$varNum] .= $val;
-                            $octs--;
-                            $index++;
-                            if ($octs <= 0) {
-                                $this->matrix[$case][$varNum] = rtrim($this->matrix[$case][$varNum]);
-                                $parent = -1;
-                            }
-                        } else {
-                            $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
-                            if ($width > 0) {
-                                $octs = Utils::widthToOcts($width) - 1; // Buffer::roundUp($width, 8) / 8) -1;
-                                if ($octs > 0) {
-                                    $parent = $index;
-                                } else {
-                                    $val = rtrim($val);
+                            
+                            $val = '';
+                            if (! $compressed) {
+                                $val = $buffer->readString(8);
+                            } else {
+                                $opcode = $this->readOpcode($buffer);
+                                switch ($opcode) {
+                                    case self::OPCODE_NOP;
+                                        break 2;
+                                    case self::OPCODE_EOF;
+                                        throw new Exception(
+                                            'Error reading data: unexpected end of compressed data file (cluster code 252)'
+                                        );
+                                        break 2;
+                                    case self::OPCODE_RAW_DATA;
+                                        $val = $buffer->readString(8);
+                                        break;
+                                    case self::OPCODE_WHITESPACES;
+                                        $val = '        ';
+                                        break;
                                 }
-                                $this->matrix[$case][$varNum] = $val;
                             }
+                            $this->matrix[$case][$varNum] .= $val;
                         }
-                    } while ($octs > 0);
+                        $this->matrix[$case][$varNum] = rtrim($this->matrix[$case][$varNum]);
+                    }
                 }
                 $varNum++;
             }

@@ -89,6 +89,7 @@ class Writer
         $this->info[Record\Info\VariableAttributes::SUBTYPE] = new Record\Info\VariableAttributes();
         $this->info[Record\Info\LongStringValueLabels::SUBTYPE] = new Record\Info\LongStringValueLabels();
         $this->info[Record\Info\LongStringMissingValues::SUBTYPE] = new Record\Info\LongStringMissingValues();
+        $this->info[Record\Info\CharacterEncoding::SUBTYPE] = new Record\Info\CharacterEncoding('UTF-8');
 
         $this->data = new Record\Data();
 
@@ -118,8 +119,8 @@ class Writer
 
             $variable = new Record\Variable();
 
-            // TODO: refactory
-            $variable->name = 'V' . str_pad($idx + 1, 7, 0, STR_PAD_LEFT);
+            // TODO: refactory - keep 7 positions so we can add after that for 100 very long string segments
+            $variable->name = 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
             // $variable->name = strtoupper($var->name);
 
             // TODO: test
@@ -197,7 +198,7 @@ class Writer
 
             $segmentCount = Utils::widthToSegments($var->width);
             for ($i = 0; $i < $segmentCount; $i++) {
-                $this->info[Record\Info\VariableDisplayParam::SUBTYPE][$idx] = [
+                $this->info[Record\Info\VariableDisplayParam::SUBTYPE][] = [
                     $var->getMeasure(),
                     $var->getColumns(),
                     $var->getAlignment(),

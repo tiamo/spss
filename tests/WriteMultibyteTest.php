@@ -27,10 +27,10 @@ class WriteMultibyteTest extends TestCase
                 ],
                 [
                     'name'   => 'ccc',
-                    'label'  => '12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901233á',
+                    'label'  => 'áá345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901233á',
                     'format' => 5,
                     'values' => [
-                        1 => 'Panel',
+                        1 => 'áá345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901233á',
                     ],
                 ],
             ],
@@ -42,11 +42,14 @@ class WriteMultibyteTest extends TestCase
 
         $reader = Reader::fromString($buffer->getStream())->read();
 
-        // Sort name
+        // Short variable label
         $this->assertEquals($data['variables'][0]['label'], $reader->variables[0]->label);
 
-        // Long name
-        $this->assertEquals(mb_substr($data['variables'][1]['label'], 0, -1), $reader->variables[1]->label);
+        // Long variable label
+        $this->assertEquals(mb_substr($data['variables'][1]['values'][1], 0, -2, 'UTF-8'), $reader->variables[1]->label);
+        
+        // Long value label
+        $this->assertEquals(mb_substr($data['variables'][1]['label'], 0, -2, 'UTF-8'), $reader->valueLabels[0]->labels[0]['label']);
     }
     
     /**
@@ -105,8 +108,8 @@ class WriteMultibyteTest extends TestCase
         
         $writer = new Writer($input);
         
-        // Uncomment if you want to really save and check the resulting filein SPSS
-        //$writer->save('chinese.sav');
+        // Uncomment if you want to really save and check the resulting file in SPSS
+        //$writer->save('chinese1.sav');
         $buffer = $writer->getBuffer();
         $buffer->rewind();
 

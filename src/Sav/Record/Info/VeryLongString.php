@@ -29,10 +29,11 @@ class VeryLongString extends Info
     public function write(Buffer $buffer)
     {
         if ($this->data) {
-            $data = '';
+            $data = [];
             foreach ($this->data as $key => $value) {
-                $data .= sprintf('%s=%05d%c', $key, $value, 0) . self::DELIMITER;
+                $data[] = sprintf('%s=%05d%c', $key, $value, 0);
             }
+            $data = join(self::DELIMITER, $data);
             $this->dataCount = strlen($data);
             parent::write($buffer);
             $buffer->writeString($data);

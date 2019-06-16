@@ -169,18 +169,22 @@ class Variable extends Record
 
         // Write additional segments for very long string variables.
         if (self::isVeryLong($this->width)) {
+            $this->writeBlank($buffer, $seg0width);
             $segmentCount = Utils::widthToSegments($this->width);
             for ($i = 1; $i < $segmentCount; $i++) {
                 $segmentWidth = Utils::segmentAllocWidth($this->width, $i);
-                $format = Utils::bytesToInt([0, max($segmentWidth, 1), 1, 0]);
-
+                $format = Utils::bytesToInt([0, 1, max($segmentWidth, 1), 0]);
                 $buffer->writeInt(self::TYPE);
                 $buffer->writeInt($segmentWidth);
-                $buffer->writeInt(0); // No variable label
+                $buffer->writeInt($hasLabel); // No variable label
                 $buffer->writeInt(0); // No missing values
                 $buffer->writeInt($format); // Print format
                 $buffer->writeInt($format); // Write format
-                $buffer->writeString($this->getSegmentName($i), 8);
+                $buffer->writeString($this->getSegmentName($i - 1), 8);
+                if ($hasLabel) {
+                    $buffer->writeInt($labelLengthBytes);
+                    $buffer->writeString($label, Utils::roundUp($labelLengthBytes, 4));
+                }
 
                 $this->writeBlank($buffer, $segmentWidth);
             }
@@ -214,8 +218,8 @@ class Variable extends Record
     {
         // TODO: refactory
         $name = $this->name;
-        $name = mb_substr($name, 0, 8);
-        $name = mb_substr($name, 0, -mb_strlen($seg)) . $seg;
+        $name = mb_substr($name, 0, 6);
+        $name .=  $seg;
 
         return mb_strtoupper($name);
     }

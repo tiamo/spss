@@ -90,7 +90,7 @@ class Data extends Record
             $varNum = 0;
             for($index = 0; $index < $varCount; $index++) {
                 $var = $variables[$index];
-                $isNumeric = $var->width == 0;
+                $isNumeric = $var->width == 0 && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
                 $width = isset($var->write[2]) ? $var->write[2] : $var->width;
 
                 // var_dump($var);

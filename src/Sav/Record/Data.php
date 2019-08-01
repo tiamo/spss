@@ -250,7 +250,22 @@ class Data extends Record
                     }
                 } else {
                     if (! $compressed) {
-                        $buffer->writeString($value, Utils::roundUp($width, 8));
+                        $offset = 0;
+                        $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                        $segmentsCount = Utils::widthToSegments($width);
+                        for ($s = 0; $s < $segmentsCount; $s++) {
+                            $segWidth = Utils::segmentAllocWidth($width, $s);
+                            for ($i = $segWidth; $i > 0; $i -= 8) {
+                                if ($segWidth == 255) {
+                                    $chunkSize = min($i, 8);
+                                } else {
+                                    $chunkSize = 8;
+                                }
+                                $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
+                                $dataBuffer->writeString($val, 8);
+                                $offset += $chunkSize;
+                            }
+                        }
                     } else {
                         $offset = 0;
                         $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;

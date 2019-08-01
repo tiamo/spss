@@ -250,7 +250,6 @@ class Data extends Record
                     }
                 } else {
                     if (! $compressed) {
-                        $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
                         $buffer->writeString($value, Utils::roundUp($width, 8));
                     } else {
                         $offset = 0;

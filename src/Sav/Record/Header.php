@@ -135,8 +135,9 @@ class Header extends Record
 
     /**
      * @param Buffer $buffer
+     * @param $cases_count_total: Not NULL for appending mode
      */
-    public function write(Buffer $buffer)
+    public function write(Buffer $buffer, $cases_count_total=null)
     {
         $buffer->write($this->recType);
         $buffer->writeString($this->prodName, 60);
@@ -144,7 +145,11 @@ class Header extends Record
         $buffer->writeInt($this->nominalCaseSize);
         $buffer->writeInt($this->compression);
         $buffer->writeInt($this->weightIndex);
-        $buffer->writeInt($this->casesCount);
+        if ( $cases_count_total ) {
+            $buffer->writeInt($cases_count_total);
+        } else {
+            $buffer->writeInt($this->casesCount);
+        }
         $buffer->writeDouble($this->bias);
         $buffer->writeString($this->creationDate, 9);
         $buffer->writeString($this->creationTime, 8);

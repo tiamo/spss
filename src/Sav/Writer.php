@@ -43,6 +43,10 @@ class Writer
      */
     protected $buffer;
 
+    protected $length_before_data_record;       # the length before Data Record
+
+    protected $cases_count_total;               # with appending mode, you need the total count of saving file at first time
+
     /**
      * Writer constructor.
      *
@@ -53,6 +57,11 @@ class Writer
     {
         $this->buffer = Buffer::factory();
         $this->buffer->context = $this;
+
+        if ( isset($data['cases_count_total']) ) {
+            $this->cases_count_total = $data['cases_count_total'];
+            unset($data['cases_count_total']);
+        }
 
         if (! empty($data)) {
             $this->write($data);
@@ -221,7 +230,7 @@ class Writer
         $this->header->nominalCaseSize = $nominalIdx;
 
         // write header
-        $this->header->write($this->buffer);
+        $this->header->write($this->buffer, $this->cases_count_total);
 
         // write variables
         foreach ($this->variables as $variable) {
@@ -246,6 +255,8 @@ class Writer
             $info->write($this->buffer);
         }
 
+        $this->length_before_data_record = $this->buffer->position();
+
         $this->data->write($this->buffer);
     }
 
@@ -256,6 +267,15 @@ class Writer
     public function save($file)
     {
         return $this->buffer->saveToFile($file);
+    }
+
+    /**
+     * @param $file
+     * @return false|int
+     */
+    public function append($file)
+    {
+        return $this->buffer->appendToFile($file, $this->length_before_data_record);
     }
 
     /**

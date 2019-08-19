@@ -120,6 +120,38 @@ class Buffer
     }
 
     /**
+     * @param string $file Path to file
+     * @param int $head_length
+     * @return false|int
+     */
+    public function appendToFile($file, $head_length)
+    {
+        rewind($this->_stream);
+
+        # No need Data Record's header, see Data::write()
+        $offset = $head_length + 8;
+
+        # Trim the tail of Data Record padding, eat all the zero : )
+        # example: 6d00 + 6c00 = 6d6c, not 6d00 6c00
+        $fp = fopen($file, 'cb+');
+        $pos = 0;
+        do {
+            if (-1 === fseek($fp, $pos, SEEK_END)) {
+                return false;
+            }
+
+            $t = fgetc($fp);
+            if ( ord($t) !== 0 ) {
+                break;
+            }
+
+            $pos--;
+        } while(1);
+
+        return stream_copy_to_stream($this->_stream, $fp, -1, $offset);
+    }
+
+    /**
      * @param resource $resource
      * @param null|int $maxlength
      * @return false|int

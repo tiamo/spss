@@ -263,7 +263,7 @@ class Data extends Record
                                 } else {
                                     $chunkSize = 8;
                                 }
-                                $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
+                                $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mb_substr here
                                 if ($val == "") {
                                     $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_WHITESPACES);
                                 } else {

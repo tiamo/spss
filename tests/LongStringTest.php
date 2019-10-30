@@ -11,8 +11,8 @@ class LongStringTest extends TestCase
 
     public function testLongString()
     {
-        $firstLong = str_repeat('1234567890', 30);
-        $secondLong = str_repeat('abcdefghij', 30);
+        $firstLong = str_repeat('1234567890', 300);
+        $secondLong = str_repeat('abcdefghij', 300);
         $data   = [
             'header'    => [
                 'prodName'     => '@(#) IBM SPSS STATISTICS',
@@ -24,7 +24,7 @@ class LongStringTest extends TestCase
                 [
                     'name'   => 'long',
                     'label'  => 'long label',
-                    'width'  => 300,
+                    'width'  => 3000,
                     'format' => Variable::FORMAT_TYPE_A,
                     'attributes' => [
                         '$@Role' => Variable::ROLE_INPUT,

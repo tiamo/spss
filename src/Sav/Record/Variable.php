@@ -218,7 +218,7 @@ class Variable extends Record
     {
         // TODO: refactory
         $name = $this->name;
-        $name = mb_substr($name, 0, 6);
+        $name = mb_substr($name, 0, 5);
         $name .=  $seg;
 
         return mb_strtoupper($name);

@@ -205,7 +205,7 @@ class Utils
             return $width;
         }
 
-        return $segment < $segmentCount - 1 ? Variable::REAL_VLS_CHUNK : $width - $segment * Variable::EFFECTIVE_VLS_CHUNK;
+        return $segment < $segmentCount - 1 ? Variable::REAL_VLS_CHUNK : self::roundUp($width - $segment * Variable::EFFECTIVE_VLS_CHUNK, 8);
     }
 
     /**

@@ -120,8 +120,8 @@ class Writer
             $variable = new Record\Variable();
 
             // TODO: refactory - keep 7 positions so we can add after that for 100 very long string segments
-            $variable->name = 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
-            // $variable->name = strtoupper($var->name);
+            //$variable->name = 'V' . str_pad($idx + 1, 4, 0, STR_PAD_LEFT);
+            $variable->name = substr(strtoupper($var->name),0,8);
 
             // TODO: test
             if ($var->format == Variable::FORMAT_TYPE_A) {

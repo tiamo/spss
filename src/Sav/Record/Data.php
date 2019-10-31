@@ -133,14 +133,14 @@ class Data extends Record
                         if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
                             // If next segments are empty too, skip
                             $continue;
-                        }                        
+                        }
                         for ($i = $segWidth; $i > 0; $i -= 8) {
-                            if ($segWidth = 255) {
+                            if ($segWidth == 255) {
                                 $chunkSize = min($i, 8);
                             } else {
                                 $chunkSize = 8;
                             }
-                            
+
                             $val = '';
                             if (! $compressed) {
                                 $val = $buffer->readString(8);
@@ -213,7 +213,7 @@ class Data extends Record
 
         /** @var Record\Info[] $info */
         $info = $buffer->context->info;
-        
+
         $veryLongStrings = [];
         if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
             $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
@@ -224,7 +224,7 @@ class Data extends Record
         } else {
             $sysmis = NAN;
         }
-        
+
         $dataBuffer = Buffer::factory('', ['memory' => true]);
 
         for ($case = 0; $case < $casesCount; $case++) {
@@ -258,7 +258,7 @@ class Data extends Record
                         for ($s = 0; $s < $segmentsCount; $s++) {
                             $segWidth = Utils::segmentAllocWidth($width, $s);
                             for ($i = $segWidth; $i > 0; $i -= 8) {
-                                if ($segWidth = 255) {
+                                if ($segWidth == 255) {
                                     $chunkSize = min($i, 8);
                                 } else {
                                     $chunkSize = 8;
@@ -272,7 +272,7 @@ class Data extends Record
                                 }
                                 $offset += $chunkSize;
                             }
-                        }                        
+                        }
                     }
                 }
             }

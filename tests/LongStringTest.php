@@ -22,8 +22,21 @@ class LongStringTest extends TestCase
             ],
             'variables' => [
                 [
-                    'name'   => 'long',
-                    'label'  => 'long label',
+                    'name'   => 'LONGER1',
+                    'label'  => 'long label1',
+                    'width'  => 3000,
+                    'format' => Variable::FORMAT_TYPE_A,
+                    'attributes' => [
+                        '$@Role' => Variable::ROLE_INPUT,
+                    ],
+                    'data' => [
+                        $firstLong,
+                        $secondLong
+                    ]
+                ],
+                [
+                    'name'   => 'LONGER2',
+                    'label'  => 'long label2',
                     'width'  => 3000,
                     'format' => Variable::FORMAT_TYPE_A,
                     'attributes' => [
@@ -53,6 +66,7 @@ class LongStringTest extends TestCase
 
         // Uncomment if you want to really save and check the resulting file in SPSS
         //$writer->save('longString.sav');
+
         $buffer = $writer->getBuffer();
         $buffer->rewind();
         
@@ -60,8 +74,10 @@ class LongStringTest extends TestCase
         
         $expected[0][0] = $data['variables'][0]['data'][0];
         $expected[0][1] = $data['variables'][1]['data'][0];
+        $expected[0][2] = $data['variables'][2]['data'][0];
         $expected[1][0] = $data['variables'][0]['data'][1];
         $expected[1][1] = $data['variables'][1]['data'][1];
+        $expected[1][2] = $data['variables'][2]['data'][1];
         $this->assertEquals($expected, $reader->data);
     }
 

@@ -95,8 +95,11 @@ class Writer
 
         $nominalIdx = 0;
 
+        /**
+         * @var bool[string] The variable names used in this SPSS file
+         */
+        $variableNames = [];
         /** @var Variable $var */
-        // for ($idx = 0; $idx <= $variablesCount; $idx++) {
         foreach (array_values($data['variables']) as $idx => $var) {
 
             if (is_array($var)) {
@@ -119,11 +122,29 @@ class Writer
 
             $variable = new Record\Variable();
 
-            // TODO: refactory - keep 7 positions so we can add after that for 100 very long string segments
-            //$variable->name = 'V' . str_pad($idx + 1, 4, 0, STR_PAD_LEFT);
-            $variable->name = substr(strtoupper($var->name),0,8);
+            /**
+             * @see \SPSS\Sav\Record\Variable::getSegmentName()
+             *
+             * Variable names in the SPSS file should be unique. If they are not, SPSS will rename them.
+             * If SPSS renames them and it happens to be a long string then the segments will no longer share
+             * the required prefix in the name.
+             */
+            $name = strtoupper(substr($var->name, 0, 8));
 
-            // TODO: test
+            $counter = 0;
+            /**
+             * Using base convert we can encode 36^3 = 46656 variables with a common 5 character prefix in an 8
+             * character variable name. This should suffice since the current variable limit of SPSS is 32767
+             * variables.
+             */
+            while (isset($variableNames[$name])) {
+                $name = strtoupper(substr($var->name, 0, 5) . base_convert($counter, 10, 36));
+                $counter++;
+            }
+
+            $variableNames[$name] = true;
+            $variable->name = $name;
+
             if ($var->format == Variable::FORMAT_TYPE_A) {
                 $variable->width = $var->width;
             } else {

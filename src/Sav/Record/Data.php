@@ -93,9 +93,6 @@ class Data extends Record
                 $isNumeric = $var->width == 0;
                 $width = isset($var->write[2]) ? $var->write[2] : $var->width;
 
-                // var_dump($var);
-                // exit;
-
                 if ($isNumeric) {
                     if (! $compressed) {
                         $this->matrix[$case][$varNum] = $buffer->readDouble();

@@ -181,11 +181,15 @@ class Variable extends Record
                 $buffer->writeInt($format); // Print format
                 $buffer->writeInt($format); // Write format
                 $buffer->writeString($this->getSegmentName($i - 1), 8);
-                if ($hasLabel) {
-                    $buffer->writeInt($labelLengthBytes);
-                    $buffer->writeString($label, Utils::roundUp($labelLengthBytes, 4));
-                }
 
+                /**
+                 * If the long string variable is interpreted correctly SPSS does not show these segments.
+                 * If something goes wrong they will be visible, so we provide a label to explain the situation.
+                 */
+                $segmentLabel = "Segment $i of variable {$this->name}, you should not see this";
+                $length = mb_strlen($segmentLabel, '8BIT');
+                $buffer->writeInt($length);
+                $buffer->writeString($segmentLabel, Utils::roundUp($length, 4));
                 $this->writeBlank($buffer, $segmentWidth);
             }
         }
@@ -211,12 +215,15 @@ class Variable extends Record
     }
 
     /**
-     * @param int $seg
-     * @return string
+     * Constructs the name for a segment.
+     * A long string variable consists of multiple segment variables.
+     * The names for these segment variables need not be unique across the whole SPSS file.
+     * The names for these segment must have share a prefix of at least length 5 with the base variable name.
+     * @param int $seg Index of the segment
+     * @return string Name of the segment
      */
     public function getSegmentName($seg = 0)
     {
-        // TODO: refactory
         $name = $this->name;
         $name = mb_substr($name, 0, 5);
         $name .=  $seg;

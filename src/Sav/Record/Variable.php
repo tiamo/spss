@@ -164,12 +164,11 @@ class Variable extends Record
             }
         }
 
-        // I think we don't need an empty record
-        //$this->writeBlank($buffer, $seg0width);
+        // We need an empty record
+        $this->writeBlank($buffer, $seg0width);
 
         // Write additional segments for very long string variables.
         if (self::isVeryLong($this->width)) {
-            $this->writeBlank($buffer, $seg0width);
             $segmentCount = Utils::widthToSegments($this->width);
             for ($i = 1; $i < $segmentCount; $i++) {
                 $segmentWidth = Utils::segmentAllocWidth($this->width, $i);

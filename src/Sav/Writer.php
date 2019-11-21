@@ -250,12 +250,41 @@ class Writer
     }
 
     /**
+     * @param array $data
+     * @throws \Exception
+     */
+    public function writeCase($row)
+    {
+        if (!isset($this->data)) {
+            $this->data = new Record\Data();
+        }
+        $this->header->casesCount += 1;
+
+        // re-write header and keep the position
+        $pos = $this->buffer->position();
+        $this->buffer->rewind();
+        $this->header->write($this->buffer);
+        $this->buffer->seek($pos);
+
+        // write data
+        $this->data->writeCase($this->buffer, $row);
+    }
+
+    /**
      * @param $file
      * @return false|int
      */
     public function save($file)
     {
         return $this->buffer->saveToFile($file);
+    }
+
+    /**
+     * @return true|false
+     */
+    public function close()
+    {
+        return $this->buffer->close();
     }
 
     /**

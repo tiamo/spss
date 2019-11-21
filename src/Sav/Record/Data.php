@@ -42,7 +42,7 @@ class Data extends Record
     protected $opcodeIndex = 0;
 
     /**
-     * @var int position where the data start
+     * @var int Position where the data start
      */
     protected $startData = -1;
 
@@ -50,6 +50,13 @@ class Data extends Record
      * @var array [var_index]
      */
     public $row = [];
+
+
+    /**
+     * @var Buffer Temporary buffer
+     */
+    protected $dataBuffer = null;
+
 
     /**
      * @param Buffer $buffer
@@ -67,12 +74,12 @@ class Data extends Record
 
     /**
      * @param Buffer $buffer
-     * @param Buffer $dataBuffer
      * @param int $opcode
      */
-    protected function writeOpcode(Buffer $buffer, Buffer $dataBuffer, $opcode)
+    protected function writeOpcode(Buffer $buffer, $opcode)
     {
         if ($this->opcodeIndex >= 8 || $opcode == self::OPCODE_EOF) {
+            $pos = $buffer->position();
             foreach ($this->opcodes as $opc) {
                 $buffer->write(chr($opc));
             }
@@ -80,17 +87,29 @@ class Data extends Record
             for ($i = 0; $i < $padding; $i++) {
                 $buffer->write(chr(self::OPCODE_NOP));
             }
-            $this->opcodes = [];
-            $this->opcodeIndex = 0;
-            $dataBuffer->rewind();
-            $buffer->writeStream($dataBuffer->getStream());
-            $dataBuffer->truncate();
+            if ($opcode == self::OPCODE_EOF) {
+                $dataPos = $this->dataBuffer->position();
+                $this->dataBuffer->rewind();
+                $buffer->writeStream($this->dataBuffer->getStream());
+                $this->dataBuffer->seek($dataPos);
+                $buffer->seek($pos);
+            } else {
+                $this->opcodes = [];
+                $this->opcodeIndex = 0;
+                $this->dataBuffer->rewind();
+                $buffer->writeStream($this->dataBuffer->getStream());
+                $this->dataBuffer->truncate();
+            }
         }
-        $this->opcodes[$this->opcodeIndex++] = 0xFF & $opcode;
+
+        if ($opcode != self::OPCODE_EOF) {
+            $this->opcodes[$this->opcodeIndex++] = 0xFF & $opcode;
+        }
     }
 
     /**
      * @param Buffer $buffer
+     * @param int $case
      * @throws Exception
      */
     public function readCase(Buffer $buffer, $case)
@@ -361,12 +380,10 @@ class Data extends Record
 
     /**
      * @param Buffer $buffer
+     * @param array $row
      */
-    public function write(Buffer $buffer)
+    public function writeCase(Buffer $buffer, $row)
     {
-        $buffer->writeInt(self::TYPE);
-        $buffer->writeInt(0);
-
         if (! isset($buffer->context->variables)) {
             throw new \InvalidArgumentException('Variables required');
         }
@@ -397,12 +414,16 @@ class Data extends Record
         } else {
             $sysmis = NAN;
         }
-        
-        $dataBuffer = Buffer::factory('', ['memory' => true]);
 
-        for ($case = 0; $case < $casesCount; $case++) {
+        if (!isset($this->dataBuffer)) {
+            $this->dataBuffer = Buffer::factory('', ['memory' => true]);
+            $buffer->writeInt(self::TYPE);
+            $this->startData = $buffer->position();
+            $buffer->writeInt(0);
+        }
+        //for ($case = 0; $case < $casesCount; $case++) {
             foreach ($variables as $index => $var) {
-                $value = $this->matrix[$case][$index];
+                $value = $row[$index];
 
                 // $isNumeric = $var->width == 0;
                 $isNumeric = $var->width == 0 && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
@@ -413,12 +434,12 @@ class Data extends Record
                         $buffer->writeDouble($value);
                     } else {
                         if ($value == $sysmis || $value == "") {
-                            $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_SYSMISS);
+                            $this->writeOpcode($buffer, self::OPCODE_SYSMISS);
                         } elseif ($value >= 1 - $bias && $value <= 251 - $bias && $value == (int) $value) {
-                            $this->writeOpcode($buffer, $dataBuffer, $value + $bias);
+                            $this->writeOpcode($buffer, $value + $bias);
                         } else {
-                            $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_RAW_DATA);
-                            $dataBuffer->writeDouble($value);
+                            $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
+                            $this->dataBuffer->writeDouble($value);
                         }
                     }
                 } else {
@@ -438,10 +459,10 @@ class Data extends Record
                                 }
                                 $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
                                 if ($val == "") {
-                                    $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_WHITESPACES);
+                                    $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
                                 } else {
-                                    $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_RAW_DATA);
-                                    $dataBuffer->writeString($val, 8);
+                                    $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
+                                    $this->dataBuffer->writeString($val, 8);
                                 }
                                 $offset += $chunkSize;
                             }
@@ -449,9 +470,106 @@ class Data extends Record
                     }
                 }
             }
-        }
+        //}
+        $this->writeOpcode($buffer, self::OPCODE_EOF);
+    }
 
-        $this->writeOpcode($buffer, $dataBuffer, self::OPCODE_EOF);
+    /**
+     * @param Buffer $buffer
+     */
+    public function write(Buffer $buffer)
+    {
+
+        if (count($this->matrix) > 0) {
+            if (! isset($buffer->context->variables)) {
+                throw new \InvalidArgumentException('Variables required');
+            }
+            if (! isset($buffer->context->header)) {
+                throw new \InvalidArgumentException('Header required');
+            }
+            if (! isset($buffer->context->info)) {
+                throw new \InvalidArgumentException('Info required');
+            }
+
+            $compressed = $buffer->context->header->compression;
+            $bias = $buffer->context->header->bias;
+            $casesCount = $buffer->context->header->casesCount;
+
+            /** @var Variable[] $variables */
+            $variables = $buffer->context->variables;
+
+            /** @var Record\Info[] $info */
+            $info = $buffer->context->info;
+        
+            $veryLongStrings = [];
+            if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
+                $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
+            }
+
+            if (isset($info[Record\Info\MachineFloatingPoint::SUBTYPE])) {
+                $sysmis = $info[Record\Info\MachineFloatingPoint::SUBTYPE]->sysmis;
+            } else {
+                $sysmis = NAN;
+            }
+        
+            $buffer->writeInt(self::TYPE);
+            $this->startData = $buffer->position();
+            $buffer->writeInt(0);
+            $this->dataBuffer = Buffer::factory('', ['memory' => true]);
+
+            for ($case = 0; $case < $casesCount; $case++) {
+                foreach ($variables as $index => $var) {
+                    $value = $this->matrix[$case][$index];
+
+                    // $isNumeric = $var->width == 0;
+                    $isNumeric = $var->width == 0 && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
+                    $width = isset($var->write[2]) ? $var->write[2] : $var->width;
+
+                    if ($isNumeric) {
+                        if (! $compressed) {
+                            $buffer->writeDouble($value);
+                        } else {
+                            if ($value == $sysmis || $value == "") {
+                                $this->writeOpcode($buffer, self::OPCODE_SYSMISS);
+                            } elseif ($value >= 1 - $bias && $value <= 251 - $bias && $value == (int) $value) {
+                                $this->writeOpcode($buffer, $value + $bias);
+                            } else {
+                                $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
+                                $this->dataBuffer->writeDouble($value);
+                            }
+                        }
+                    } else {
+                        if (! $compressed) {
+                            $buffer->writeString($value, Utils::roundUp($width, 8));
+                        } else {
+                            $offset = 0;
+                            $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                            $segmentsCount = Utils::widthToSegments($width);
+                            for ($s = 0; $s < $segmentsCount; $s++) {
+                                $segWidth = Utils::segmentAllocWidth($width, $s);
+                                for ($i = $segWidth; $i > 0; $i -= 8) {
+                                    if ($segWidth = 255) {
+                                        $chunkSize = min($i, 8);
+                                    } else {
+                                        $chunkSize = 8;
+                                    }
+                                    $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
+                                    if ($val == "") {
+                                        $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
+                                    } else {
+                                        $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
+                                        $this->dataBuffer->writeString($val, 8);
+                                    }
+                                    $offset += $chunkSize;
+                                }
+                            }                        
+                        }
+                    }
+                }
+            }
+
+            $this->writeOpcode($buffer, self::OPCODE_EOF);
+        }
     }
 
     /**

@@ -593,7 +593,7 @@ class Data extends Record
      */
     public function close()
     {
-        if (!isset($this->dataBuffer)) {
+        if (isset($this->dataBuffer)) {
             return $this->dataBuffer->close();
         }
         return false;

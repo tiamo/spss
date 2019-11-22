@@ -258,13 +258,9 @@ class Writer
         if (!isset($this->data)) {
             $this->data = new Record\Data();
         }
-        $this->header->casesCount += 1;
 
-        // re-write header and keep the position
-        $pos = $this->buffer->position();
-        $this->buffer->rewind();
-        $this->header->write($this->buffer);
-        $this->buffer->seek($pos);
+        // update the header info about number of cases
+        $this->header->increaseCasesCount($this->buffer);
 
         // write data
         $this->data->writeCase($this->buffer, $row);

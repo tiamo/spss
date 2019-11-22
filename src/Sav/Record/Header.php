@@ -151,4 +151,19 @@ class Header extends Record
         $buffer->writeString($this->fileLabel, 64);
         $buffer->writeNull(3);
     }
+
+    /**
+     * @param Buffer $buffer
+     */
+    public function increaseCasesCount(Buffer $buffer)
+    {
+        // Jump to the position of the casesCount in the header, re-write it and keep the current position.
+        // recType + prodName + layoutCode + nominalCaseSize + compression + weightIndex
+        // 4       + 60       + 4          + 4               + 4           + 4 = 80
+        $this->casesCount += 1;
+        $pos = $buffer->position();
+        $buffer->seek(80);
+        $buffer->writeInt($this->casesCount);
+        $buffer->seek($pos);
+    }
 }

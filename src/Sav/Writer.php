@@ -280,6 +280,9 @@ class Writer
      */
     public function close()
     {
+        if (!isset($this->data)) {
+            $this->data->close();
+        }
         return $this->buffer->close();
     }
 

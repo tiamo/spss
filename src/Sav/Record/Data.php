@@ -479,44 +479,43 @@ class Data extends Record
      */
     public function write(Buffer $buffer)
     {
+        if (! isset($buffer->context->variables)) {
+            throw new \InvalidArgumentException('Variables required');
+        }
+        if (! isset($buffer->context->header)) {
+             throw new \InvalidArgumentException('Header required');
+        }
+        if (! isset($buffer->context->info)) {
+            throw new \InvalidArgumentException('Info required');
+        }
+
+        $compressed = $buffer->context->header->compression;
+        $bias = $buffer->context->header->bias;
+        $casesCount = $buffer->context->header->casesCount;
+
+        /** @var Variable[] $variables */
+        $variables = $buffer->context->variables;
+
+        /** @var Record\Info[] $info */
+        $info = $buffer->context->info;
+
+        $veryLongStrings = [];
+        if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
+            $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
+        }
+
+        if (isset($info[Record\Info\MachineFloatingPoint::SUBTYPE])) {
+            $sysmis = $info[Record\Info\MachineFloatingPoint::SUBTYPE]->sysmis;
+        } else {
+            $sysmis = NAN;
+        }
+        
+        $buffer->writeInt(self::TYPE);
+        $this->startData = $buffer->position();
+        $buffer->writeInt(0);
+        $this->dataBuffer = Buffer::factory('', ['memory' => true]);
 
         if (count($this->matrix) > 0) {
-            if (! isset($buffer->context->variables)) {
-                throw new \InvalidArgumentException('Variables required');
-            }
-            if (! isset($buffer->context->header)) {
-                throw new \InvalidArgumentException('Header required');
-            }
-            if (! isset($buffer->context->info)) {
-                throw new \InvalidArgumentException('Info required');
-            }
-
-            $compressed = $buffer->context->header->compression;
-            $bias = $buffer->context->header->bias;
-            $casesCount = $buffer->context->header->casesCount;
-
-            /** @var Variable[] $variables */
-            $variables = $buffer->context->variables;
-
-            /** @var Record\Info[] $info */
-            $info = $buffer->context->info;
-        
-            $veryLongStrings = [];
-            if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
-                $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
-            }
-
-            if (isset($info[Record\Info\MachineFloatingPoint::SUBTYPE])) {
-                $sysmis = $info[Record\Info\MachineFloatingPoint::SUBTYPE]->sysmis;
-            } else {
-                $sysmis = NAN;
-            }
-        
-            $buffer->writeInt(self::TYPE);
-            $this->startData = $buffer->position();
-            $buffer->writeInt(0);
-            $this->dataBuffer = Buffer::factory('', ['memory' => true]);
-
             for ($case = 0; $case < $casesCount; $case++) {
                 foreach ($variables as $index => $var) {
                     $value = $this->matrix[$case][$index];
@@ -567,9 +566,8 @@ class Data extends Record
                     }
                 }
             }
-
-            $this->writeOpcode($buffer, self::OPCODE_EOF);
         }
+        $this->writeOpcode($buffer, self::OPCODE_EOF);
     }
 
     /**

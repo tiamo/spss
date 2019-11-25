@@ -338,7 +338,7 @@ class Data extends Record
                         $index = $index + $octs;    // Skip a few variables for this segment
                         if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
                             // If next segments are empty too, skip
-                            $continue;
+                            continue;
                         }                        
                         for ($i = $segWidth; $i > 0; $i -= 8) {
                             if ($segWidth = 255) {

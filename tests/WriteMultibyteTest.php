@@ -46,7 +46,7 @@ class WriteMultibyteTest extends TestCase
         $this->assertEquals($data['variables'][0]['label'], $reader->variables[0]->label);
 
         // Long variable label
-        $this->assertEquals(mb_substr($data['variables'][1]['values'][1], 0, -2, 'UTF-8'), $reader->variables[1]->label);
+        $this->assertEquals(mb_substr($data['variables'][1]['values'][1], 0, -2, 'UTF-8'), $reader->variables[2]->label);
         
         // Long value label
         $this->assertEquals(mb_substr($data['variables'][1]['label'], 0, -2, 'UTF-8'), $reader->valueLabels[0]->labels[0]['label']);

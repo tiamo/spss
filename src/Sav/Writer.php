@@ -250,12 +250,40 @@ class Writer
     }
 
     /**
+     * @param array $data
+     * @throws \Exception
+     */
+    public function writeCase($row)
+    {
+        if (!isset($this->data)) {
+            $this->data = new Record\Data();
+        }
+
+        // update the header info about number of cases
+        $this->header->increaseCasesCount($this->buffer);
+
+        // write data
+        $this->data->writeCase($this->buffer, $row);
+    }
+
+    /**
      * @param $file
      * @return false|int
      */
     public function save($file)
     {
         return $this->buffer->saveToFile($file);
+    }
+
+    /**
+     * @return true|false
+     */
+    public function close()
+    {
+        if (isset($this->data)) {
+            $this->data->close();
+        }
+        return $this->buffer->close();
     }
 
     /**

@@ -32,6 +32,16 @@ abstract class Record implements RecordInterface
     }
 
     /**
+     * @param array $data
+     * @return static
+     */
+    public static function create($data = [])
+    {
+        $record = new static($data);
+        return $record;
+    }
+
+    /**
      * @return array
      */
     public function toArray()

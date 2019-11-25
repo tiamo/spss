@@ -361,6 +361,14 @@ class Buffer
     }
 
     /**
+     * @return true|false
+     */
+    public function close()
+    {
+        return fclose($this->_stream);
+    }
+
+    /**
      * @return array
      */
     public function getMetaData()

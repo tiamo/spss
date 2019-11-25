@@ -37,6 +37,16 @@ class Reader
     public $data = [];
 
     /**
+     * @var int
+     */
+    public $lastCase = -1;
+
+    /**
+     * @var record
+     */
+    public $record;
+
+    /**
      * @var \SPSS\Buffer
      */
     protected $_buffer;
@@ -68,6 +78,14 @@ class Reader
     public static function fromString($str)
     {
         return new self(Buffer::factory($str));
+    }
+
+    /**
+     * @return $this
+     */
+    public function readMetaData()
+    {
+        return $this->readHeader()->readBody();
     }
 
     /**
@@ -132,5 +150,36 @@ class Reader
         $this->data = Record\Data::fill($this->_buffer)->toArray();
 
         return $this;
+    }
+
+    /**
+     * @return booleam
+     */
+    public function readCase()
+    {
+        if (!isset($this->record))
+            $this->record = Record\Data::create();
+        $this->lastCase += 1;
+        if (($this->lastCase >= 0) && ($this->lastCase < $this->_buffer->context->header->casesCount)) {
+            $this->record->readCase($this->_buffer, $this->lastCase);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCaseNumber()
+    {
+        return $this->lastCase;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCase()
+    {
+        return $this->record->getRow();
     }
 }

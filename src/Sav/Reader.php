@@ -133,7 +133,7 @@ class Reader
                 case Record\ValueLabel::TYPE:
                     $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [
                         // TODO: refactory
-                        'variables' => $this->variables,
+                        'variables' => $tempVars,
                     ]);
                     break;
                 case Record\Info::TYPE:

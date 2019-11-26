@@ -3,6 +3,7 @@
 namespace SPSS\Sav;
 
 use SPSS\Buffer;
+use SPSS\Utils;
 
 class Reader
 {
@@ -117,6 +118,7 @@ class Reader
 
         // TODO: refactory
         $infoCollection = new Record\InfoCollection();
+        $tempVars = [];
 
         do {
             $recType = $this->_buffer->readInt();
@@ -125,7 +127,7 @@ class Reader
                     $variable = Record\Variable::fill($this->_buffer);
                     // Skip blank records from the variables computation
                     if ($variable->width != -1) {
-                        $this->variables[] = $variable;
+                        $tempVars[] = $variable;
                     }
                     break;
                 case Record\ValueLabel::TYPE:
@@ -142,6 +144,24 @@ class Reader
                     break;
             }
         } while ($recType != Record\Data::TYPE);
+
+        // Excluding the records that are creating only as a consequence of very long string records
+        // from the variables computation.
+        $veryLongStrings = [];
+        if (isset($this->info[Record\Info\VeryLongString::SUBTYPE])) {
+            $veryLongStrings = $this->info[Record\Info\VeryLongString::SUBTYPE]->toArray();
+        }
+        $segmentsCount = 0;
+        foreach ($tempVars as $index => $var) {
+            if ($segmentsCount == 0) {
+                if (isset($veryLongStrings[$var->name])) {
+                    $segmentsCount = Utils::widthToSegments($veryLongStrings[$var->name]) - 1;
+                }
+                $this->variables[] = $var;
+            } else {
+                $segmentsCount--;
+            }
+        }
 
         return $this;
     }

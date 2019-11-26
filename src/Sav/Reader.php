@@ -125,10 +125,7 @@ class Reader
             switch ($recType) {
                 case Record\Variable::TYPE:
                     $variable = Record\Variable::fill($this->_buffer);
-                    // Skip blank records from the variables computation
-                    if ($variable->width != -1) {
-                        $tempVars[] = $variable;
-                    }
+                    $tempVars[] = $variable;
                     break;
                 case Record\ValueLabel::TYPE:
                     $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [
@@ -153,13 +150,16 @@ class Reader
         }
         $segmentsCount = 0;
         foreach ($tempVars as $index => $var) {
-            if ($segmentsCount == 0) {
-                if (isset($veryLongStrings[$var->name])) {
-                    $segmentsCount = Utils::widthToSegments($veryLongStrings[$var->name]) - 1;
+            // Skip blank records from the variables computation
+            if ($var->width != -1) {
+                if ($segmentsCount == 0) {
+                    if (isset($veryLongStrings[$var->name])) {
+                        $segmentsCount = Utils::widthToSegments($veryLongStrings[$var->name]) - 1;
+                    }
+                    $this->variables[] = $var;
+                } else {
+                    $segmentsCount--;
                 }
-                $this->variables[] = $var;
-            } else {
-                $segmentsCount--;
             }
         }
 

@@ -119,13 +119,16 @@ class Reader
         // TODO: refactory
         $infoCollection = new Record\InfoCollection();
         $tempVars = [];
+        $posVar = 0;
 
         do {
             $recType = $this->_buffer->readInt();
             switch ($recType) {
                 case Record\Variable::TYPE:
                     $variable = Record\Variable::fill($this->_buffer);
+                    $variable->realPosition = $posVar;
                     $tempVars[] = $variable;
+                    $posVar += 1;
                     break;
                 case Record\ValueLabel::TYPE:
                     $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [

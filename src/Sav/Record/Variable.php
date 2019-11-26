@@ -30,6 +30,11 @@ class Variable extends Record
     public $width;
 
     /**
+     * The real record position of the variable inside the file.
+     */
+    public $realPosition;
+
+    /**
      * If the variable has no missing values, set to 0.
      * If the variable has one, two, or three discrete missing values, set to 1, 2, or 3, respectively.
      * If the variable has a range for missing variables, set to -2;

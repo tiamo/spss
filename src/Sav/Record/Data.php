@@ -156,8 +156,6 @@ class Data extends Record
 
         if (($case >= 0) && ($case < $casesCount)) {
             $this->row = [];
-            $parent = -1;
-            $octs = 0;
             $varCount = count($variables);
             $varNum = 0;
             for($index = 0; $index < $varCount; $index++) {
@@ -197,11 +195,8 @@ class Data extends Record
                     $this->row[$varNum] = '';
                     $segmentsCount = Utils::widthToSegments($width);
                     $opcode = self::OPCODE_RAW_DATA;
-                    $index = $index - 1;
                     for ($s = 0; $s < $segmentsCount; $s++) {
                         $segWidth = Utils::segmentAllocWidth($width, $s);
-                        $octs = Utils::widthToOcts($segWidth);
-                        $index = $index + $octs;    // Skip a few variables for this segment
                         if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
                             // If next segments are empty too, skip
                             continue;
@@ -290,8 +285,6 @@ class Data extends Record
         $this->opcodeIndex = 8;
 
         for ($case = 0; $case < $casesCount; $case++) {
-            $parent = -1;
-            $octs = 0;
             $varCount = count($variables);
             $varNum = 0;
             for($index = 0; $index < $varCount; $index++) {
@@ -331,11 +324,8 @@ class Data extends Record
                     $this->matrix[$case][$varNum] = '';
                     $segmentsCount = Utils::widthToSegments($width);
                     $opcode = self::OPCODE_RAW_DATA;
-                    $index = $index - 1;
                     for ($s = 0; $s < $segmentsCount; $s++) {
                         $segWidth = Utils::segmentAllocWidth($width, $s);
-                        $octs = Utils::widthToOcts($segWidth);
-                        $index = $index + $octs;    // Skip a few variables for this segment
                         if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
                             // If next segments are empty too, skip
                             continue;

@@ -122,7 +122,11 @@ class Reader
             $recType = $this->_buffer->readInt();
             switch ($recType) {
                 case Record\Variable::TYPE:
-                    $this->variables[] = Record\Variable::fill($this->_buffer);
+                    $variable = Record\Variable::fill($this->_buffer);
+                    // Skip blank records from the variables computation
+                    if ($variable->width != -1) {
+                        $this->variables[] = $variable;
+                    }
                     break;
                 case Record\ValueLabel::TYPE:
                     $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [

@@ -109,6 +109,163 @@ class Data extends Record
 
     /**
      * @param Buffer $buffer
+     * @param bool $compressed
+     * @param int $bias
+     * @param array $variables
+     * @param array $veryLongStrings
+     * @param int $sysmis
+     * @throws Exception
+     */
+    protected function readCaseData(Buffer $buffer, $compressed, $bias, $variables, $veryLongStrings, $sysmis)
+    {
+        $result = [];
+        $varCount = count($variables);
+        $varNum = 0;
+        for($index = 0; $index < $varCount; $index++) {
+            $var = $variables[$index];
+            $isNumeric = $var->width == 0;
+            $width = isset($var->write[2]) ? $var->write[2] : $var->width;
+
+            // var_dump($var);
+            // exit;
+
+            if ($isNumeric) {
+                if (! $compressed) {
+                    $result[$varNum] = $buffer->readDouble();
+                } else {
+                    $opcode = $this->readOpcode($buffer);
+                    switch ($opcode) {
+                        case self::OPCODE_NOP;
+                            break;
+                        case self::OPCODE_EOF;
+                            throw new Exception(
+                                'Error reading data: unexpected end of compressed data file (cluster code 252)'
+                            );
+                            break;
+                        case self::OPCODE_RAW_DATA;
+                            $result[$varNum] = $buffer->readDouble();
+                            break;
+                        case self::OPCODE_SYSMISS;
+                            $result[$varNum] = $sysmis;
+                            break;
+                        default:
+                            $result[$varNum] = $opcode - $bias;
+                            break;
+                    }
+                }
+            } else {
+                $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                $result[$varNum] = '';
+                $segmentsCount = Utils::widthToSegments($width);
+                $opcode = self::OPCODE_RAW_DATA;
+                for ($s = 0; $s < $segmentsCount; $s++) {
+                    $segWidth = Utils::segmentAllocWidth($width, $s);
+                    if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
+                        // If next segments are empty too, skip
+                        continue;
+                    }                        
+                    for ($i = $segWidth; $i > 0; $i -= 8) {
+                        if ($segWidth = 255) {
+                            $chunkSize = min($i, 8);
+                        } else {
+                            $chunkSize = 8;
+                        }
+
+                        $val = '';
+                        if (! $compressed) {
+                            $val = $buffer->readString(8);
+                        } else {
+                            $opcode = $this->readOpcode($buffer);
+                            switch ($opcode) {
+                                case self::OPCODE_NOP;
+                                    break 2;
+                                case self::OPCODE_EOF;
+                                    throw new Exception(
+                                        'Error reading data: unexpected end of compressed data file (cluster code 252)'
+                                    );
+                                    break 2;
+                                case self::OPCODE_RAW_DATA;
+                                    $val = $buffer->readString(8);
+                                    break;
+                                case self::OPCODE_WHITESPACES;
+                                    $val = '        ';
+                                    break;
+                            }
+                        }
+                        $result[$varNum] .= $val;
+                    }
+                    $result[$varNum] = rtrim($result[$varNum]);
+                }
+            }
+            $varNum++;
+        }
+        return $result;
+    }
+
+    /**
+     * @param Buffer $buffer
+     * @param array $row
+     * @param bool $compressed
+     * @param int $bias
+     * @param array $variables
+     * @param array $veryLongStrings
+     * @param int $sysmis
+     * @throws Exception
+     */
+    protected function writeCaseData(Buffer $buffer, $row, $compressed, $bias, $variables, $veryLongStrings, $sysmis)
+    {
+       foreach ($variables as $index => $var) {
+            $value = $row[$index];
+
+            // $isNumeric = $var->width == 0;
+            $isNumeric = $var->width == 0 && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
+            $width = isset($var->write[2]) ? $var->write[2] : $var->width;
+
+            if ($isNumeric) {
+                if (! $compressed) {
+                    $buffer->writeDouble($value);
+                } else {
+                    if ($value == $sysmis || $value == "") {
+                        $this->writeOpcode($buffer, self::OPCODE_SYSMISS);
+                    } elseif ($value >= 1 - $bias && $value <= 251 - $bias && $value == (int) $value) {
+                        $this->writeOpcode($buffer, $value + $bias);
+                    } else {
+                        $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
+                        $this->dataBuffer->writeDouble($value);
+                    }
+                }
+            } else {
+                if (! $compressed) {
+                    $buffer->writeString($value, Utils::roundUp($width, 8));
+                } else {
+                    $offset = 0;
+                    $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                    $segmentsCount = Utils::widthToSegments($width);
+                    for ($s = 0; $s < $segmentsCount; $s++) {
+                        $segWidth = Utils::segmentAllocWidth($width, $s);
+                        for ($i = $segWidth; $i > 0; $i -= 8) {
+                            if ($segWidth = 255) {
+                                $chunkSize = min($i, 8);
+                            } else {
+                                $chunkSize = 8;
+                            }
+                            $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
+                            if ($val == "") {
+                                $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
+                            } else {
+                                $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
+                                $this->dataBuffer->writeString($val, 8);
+                            }
+                            $offset += $chunkSize;
+                        }
+                    }                        
+                }
+            }
+        }
+    }
+
+    /**
+     * @param Buffer $buffer
      * @param int $case
      * @throws Exception
      */
@@ -155,92 +312,8 @@ class Data extends Record
         }
 
         if (($case >= 0) && ($case < $casesCount)) {
-            $this->row = [];
-            $parent = -1;
-            $octs = 0;
-            $varCount = count($variables);
-            $varNum = 0;
-            for($index = 0; $index < $varCount; $index++) {
-                $var = $variables[$index];
-                $isNumeric = $var->width == 0;
-                $width = isset($var->write[2]) ? $var->write[2] : $var->width;
-
-                // var_dump($var);
-                // exit;
-
-                if ($isNumeric) {
-                    if (! $compressed) {
-                        $this->row[$varNum] = $buffer->readDouble();
-                    } else {
-                        $opcode = $this->readOpcode($buffer);
-                        switch ($opcode) {
-                            case self::OPCODE_NOP;
-                                break;
-                            case self::OPCODE_EOF;
-                                throw new Exception(
-                                    'Error reading data: unexpected end of compressed data file (cluster code 252)'
-                                );
-                                break;
-                            case self::OPCODE_RAW_DATA;
-                                $this->row[$varNum] = $buffer->readDouble();
-                                break;
-                            case self::OPCODE_SYSMISS;
-                                $this->row[$varNum] = $sysmis;
-                                break;
-                            default:
-                                $this->row[$varNum] = $opcode - $bias;
-                                break;
-                        }
-                    }
-                } else {
-                    $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
-                    $this->row[$varNum] = '';
-                    $segmentsCount = Utils::widthToSegments($width);
-                    $opcode = self::OPCODE_RAW_DATA;
-                    $index = $index - 1;
-                    for ($s = 0; $s < $segmentsCount; $s++) {
-                        $segWidth = Utils::segmentAllocWidth($width, $s);
-                        $octs = Utils::widthToOcts($segWidth);
-                        $index = $index + $octs;    // Skip a few variables for this segment
-                        if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
-                            // If next segments are empty too, skip
-                            $continue;
-                        }                        
-                        for ($i = $segWidth; $i > 0; $i -= 8) {
-                            if ($segWidth = 255) {
-                                $chunkSize = min($i, 8);
-                            } else {
-                                $chunkSize = 8;
-                            }
-                            
-                            $val = '';
-                            if (! $compressed) {
-                                $val = $buffer->readString(8);
-                            } else {
-                                $opcode = $this->readOpcode($buffer);
-                                switch ($opcode) {
-                                    case self::OPCODE_NOP;
-                                        break 2;
-                                    case self::OPCODE_EOF;
-                                        throw new Exception(
-                                            'Error reading data: unexpected end of compressed data file (cluster code 252)'
-                                        );
-                                        break 2;
-                                    case self::OPCODE_RAW_DATA;
-                                        $val = $buffer->readString(8);
-                                        break;
-                                    case self::OPCODE_WHITESPACES;
-                                        $val = '        ';
-                                        break;
-                                }
-                            }
-                            $this->row[$varNum] .= $val;
-                        }
-                        $this->row[$varNum] = rtrim($this->row[$varNum]);
-                    }
-                }
-                $varNum++;
-            }
+            $this->row = $this->readCaseData($buffer, $compressed, $bias, $variables, $veryLongStrings, $sysmis);
+            
         }
     }
 
@@ -290,91 +363,7 @@ class Data extends Record
         $this->opcodeIndex = 8;
 
         for ($case = 0; $case < $casesCount; $case++) {
-            $parent = -1;
-            $octs = 0;
-            $varCount = count($variables);
-            $varNum = 0;
-            for($index = 0; $index < $varCount; $index++) {
-                $var = $variables[$index];
-                $isNumeric = $var->width == 0;
-                $width = isset($var->write[2]) ? $var->write[2] : $var->width;
-
-                // var_dump($var);
-                // exit;
-
-                if ($isNumeric) {
-                    if (! $compressed) {
-                        $this->matrix[$case][$varNum] = $buffer->readDouble();
-                    } else {
-                        $opcode = $this->readOpcode($buffer);
-                        switch ($opcode) {
-                            case self::OPCODE_NOP;
-                                break;
-                            case self::OPCODE_EOF;
-                                throw new Exception(
-                                    'Error reading data: unexpected end of compressed data file (cluster code 252)'
-                                );
-                                break;
-                            case self::OPCODE_RAW_DATA;
-                                $this->matrix[$case][$varNum] = $buffer->readDouble();
-                                break;
-                            case self::OPCODE_SYSMISS;
-                                $this->matrix[$case][$varNum] = $sysmis;
-                                break;
-                            default:
-                                $this->matrix[$case][$varNum] = $opcode - $bias;
-                                break;
-                        }
-                    }
-                } else {
-                    $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
-                    $this->matrix[$case][$varNum] = '';
-                    $segmentsCount = Utils::widthToSegments($width);
-                    $opcode = self::OPCODE_RAW_DATA;
-                    $index = $index - 1;
-                    for ($s = 0; $s < $segmentsCount; $s++) {
-                        $segWidth = Utils::segmentAllocWidth($width, $s);
-                        $octs = Utils::widthToOcts($segWidth);
-                        $index = $index + $octs;    // Skip a few variables for this segment
-                        if ($opcode === self::OPCODE_NOP || $opcode === self::OPCODE_EOF) {
-                            // If next segments are empty too, skip
-                            continue;
-                        }                        
-                        for ($i = $segWidth; $i > 0; $i -= 8) {
-                            if ($segWidth = 255) {
-                                $chunkSize = min($i, 8);
-                            } else {
-                                $chunkSize = 8;
-                            }
-                            
-                            $val = '';
-                            if (! $compressed) {
-                                $val = $buffer->readString(8);
-                            } else {
-                                $opcode = $this->readOpcode($buffer);
-                                switch ($opcode) {
-                                    case self::OPCODE_NOP;
-                                        break 2;
-                                    case self::OPCODE_EOF;
-                                        throw new Exception(
-                                            'Error reading data: unexpected end of compressed data file (cluster code 252)'
-                                        );
-                                        break 2;
-                                    case self::OPCODE_RAW_DATA;
-                                        $val = $buffer->readString(8);
-                                        break;
-                                    case self::OPCODE_WHITESPACES;
-                                        $val = '        ';
-                                        break;
-                                }
-                            }
-                            $this->matrix[$case][$varNum] .= $val;
-                        }
-                        $this->matrix[$case][$varNum] = rtrim($this->matrix[$case][$varNum]);
-                    }
-                }
-                $varNum++;
-            }
+            $this->matrix[$case] = $this->readCaseData($buffer, $compressed, $bias, $variables, $veryLongStrings, $sysmis);
         }
     }
 
@@ -422,54 +411,7 @@ class Data extends Record
             $buffer->writeInt(0);
         }
         //for ($case = 0; $case < $casesCount; $case++) {
-            foreach ($variables as $index => $var) {
-                $value = $row[$index];
-
-                // $isNumeric = $var->width == 0;
-                $isNumeric = $var->width == 0 && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
-                $width = isset($var->write[2]) ? $var->write[2] : $var->width;
-
-                if ($isNumeric) {
-                    if (! $compressed) {
-                        $buffer->writeDouble($value);
-                    } else {
-                        if ($value == $sysmis || $value == "") {
-                            $this->writeOpcode($buffer, self::OPCODE_SYSMISS);
-                        } elseif ($value >= 1 - $bias && $value <= 251 - $bias && $value == (int) $value) {
-                            $this->writeOpcode($buffer, $value + $bias);
-                        } else {
-                            $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
-                            $this->dataBuffer->writeDouble($value);
-                        }
-                    }
-                } else {
-                    if (! $compressed) {
-                        $buffer->writeString($value, Utils::roundUp($width, 8));
-                    } else {
-                        $offset = 0;
-                        $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
-                        $segmentsCount = Utils::widthToSegments($width);
-                        for ($s = 0; $s < $segmentsCount; $s++) {
-                            $segWidth = Utils::segmentAllocWidth($width, $s);
-                            for ($i = $segWidth; $i > 0; $i -= 8) {
-                                if ($segWidth = 255) {
-                                    $chunkSize = min($i, 8);
-                                } else {
-                                    $chunkSize = 8;
-                                }
-                                $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
-                                if ($val == "") {
-                                    $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
-                                } else {
-                                    $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
-                                    $this->dataBuffer->writeString($val, 8);
-                                }
-                                $offset += $chunkSize;
-                            }
-                        }                        
-                    }
-                }
-            }
+            $this->writeCaseData($buffer, $row, $compressed, $bias, $variables, $veryLongStrings, $sysmis);
         //}
         $this->writeOpcode($buffer, self::OPCODE_EOF);
     }
@@ -517,54 +459,8 @@ class Data extends Record
 
         if (count($this->matrix) > 0) {
             for ($case = 0; $case < $casesCount; $case++) {
-                foreach ($variables as $index => $var) {
-                    $value = $this->matrix[$case][$index];
-
-                    // $isNumeric = $var->width == 0;
-                    $isNumeric = $var->width == 0 && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
-                    $width = isset($var->write[2]) ? $var->write[2] : $var->width;
-
-                    if ($isNumeric) {
-                        if (! $compressed) {
-                            $buffer->writeDouble($value);
-                        } else {
-                            if ($value == $sysmis || $value == "") {
-                                $this->writeOpcode($buffer, self::OPCODE_SYSMISS);
-                            } elseif ($value >= 1 - $bias && $value <= 251 - $bias && $value == (int) $value) {
-                                $this->writeOpcode($buffer, $value + $bias);
-                            } else {
-                                $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
-                                $this->dataBuffer->writeDouble($value);
-                            }
-                        }
-                    } else {
-                        if (! $compressed) {
-                            $buffer->writeString($value, Utils::roundUp($width, 8));
-                        } else {
-                            $offset = 0;
-                            $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
-                            $segmentsCount = Utils::widthToSegments($width);
-                            for ($s = 0; $s < $segmentsCount; $s++) {
-                                $segWidth = Utils::segmentAllocWidth($width, $s);
-                                for ($i = $segWidth; $i > 0; $i -= 8) {
-                                    if ($segWidth = 255) {
-                                        $chunkSize = min($i, 8);
-                                    } else {
-                                        $chunkSize = 8;
-                                    }
-                                    $val = substr($value, $offset, $chunkSize);  // Read 8 byte segements, don't use mbsubstr here
-                                    if ($val == "") {
-                                        $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
-                                    } else {
-                                        $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
-                                        $this->dataBuffer->writeString($val, 8);
-                                    }
-                                    $offset += $chunkSize;
-                                }
-                            }                        
-                        }
-                    }
-                }
+                $row = $this->matrix[$case];
+                $this->writeCaseData($buffer, $row, $compressed, $bias, $variables, $veryLongStrings, $sysmis);
             }
         }
         $this->writeOpcode($buffer, self::OPCODE_EOF);

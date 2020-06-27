@@ -9,20 +9,17 @@ class LongStringMissingValues extends Info
 {
     const SUBTYPE = 22;
 
-    /**
-     * @throws \SPSS\Exception
-     */
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
         $buffer = $buffer->allocate($this->dataCount * $this->dataSize);
         while ($varNameLength = $buffer->readInt()) {
-            $varName = trim($buffer->readString($varNameLength));
-            $count = \ord($buffer->read(1));
-            $this->data[$varName] = array();
-            $valueLength = $buffer->readInt();
-            for ($i = 0; $i < $count; ++$i) {
-                $value = $buffer->readString($valueLength);
+            $varName              = trim($buffer->readString($varNameLength));
+            $count                = \ord($buffer->read(1));
+            $this->data[$varName] = [];
+            $valueLength          = $buffer->readInt();
+            for ($i = 0; $i < $count; $i++) {
+                $value                  = $buffer->readString($valueLength);
                 $this->data[$varName][] = rtrim($value);
             }
         }
@@ -35,7 +32,7 @@ class LongStringMissingValues extends Info
             foreach ($this->data as $varName => $values) {
                 $localBuffer->writeInt(mb_strlen($varName));
                 $localBuffer->writeString($varName);
-                $localBuffer->write(\chr(\count($values)), 1);
+                $localBuffer->write(\chr(is_countable($values) ? \count($values) : 0), 1);
                 $localBuffer->writeInt(8);
                 foreach ($values as $value) {
                     $localBuffer->writeString($value, 8);

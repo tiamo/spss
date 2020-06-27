@@ -10,7 +10,7 @@ class InfoCollection
     /**
      * @var array
      */
-    public static $classMap = array(
+    public static $classMap = [
         Record\Info\MachineInteger::class,
         Record\Info\MachineFloatingPoint::class,
         Record\Info\VariableDisplayParam::class,
@@ -22,22 +22,22 @@ class InfoCollection
         Record\Info\CharacterEncoding::class,
         Record\Info\LongStringValueLabels::class,
         Record\Info\LongStringMissingValues::class,
-    );
+    ];
 
     /**
      * @var array
      */
-    public $data = array();
+    public $data = [];
 
     /**
-     * @param  int  $subtype
+     * @param int $subtype
      *
      * @return string
      */
     protected static function getClassBySubtype($subtype)
     {
         foreach (self::$classMap as $class) {
-            if (is_subclass_of($class, Record\Info::class) && $subtype == $class::SUBTYPE) {
+            if ($subtype === $class::SUBTYPE && is_subclass_of($class, Record\Info::class)) {
                 return $class;
             }
         }
@@ -46,11 +46,13 @@ class InfoCollection
     }
 
     /**
+     * @param  Buffer  $buffer
+     *
      * @return array|Record
      */
     public function fill(Buffer $buffer)
     {
-        $subtype = $buffer->readInt();
+        $subtype              = $buffer->readInt();
         $this->data[$subtype] = \call_user_func(self::getClassBySubtype($subtype) . '::fill', $buffer);
 
         return $this->data;

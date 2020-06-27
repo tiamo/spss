@@ -9,10 +9,7 @@ class VariableAttributes extends Info
 {
     const SUBTYPE = 18;
 
-    /**
-     * @var array
-     */
-    public $data = array();
+    public $data = [];
 
     public function read(Buffer $buffer)
     {
@@ -21,7 +18,7 @@ class VariableAttributes extends Info
         foreach (explode('/', $data) as $item) {
             list($var, $value) = explode(':', $item);
             if (preg_match_all('#(.+)\((.+)\)#Uis', $value, $matches)) {
-                $this->data[$var] = array();
+                $this->data[$var] = [];
                 foreach ($matches[1] as $key => $val) {
                     $this->data[$var][$val] = trim(trim($matches[2][$key]), '\'');
                 }
@@ -33,7 +30,7 @@ class VariableAttributes extends Info
 
     public function write(Buffer $buffer)
     {
-        $lines = array();
+        $lines = [];
         foreach ($this->data as $var => $value) {
             if (\is_array($value)) {
                 $_tmpString = '';
@@ -45,8 +42,8 @@ class VariableAttributes extends Info
             $lines[] = sprintf('%s:%s', $var, $value);
         }
 
-        if ($lines) {
-            $data = implode('/', $lines);
+        if ($lines !== []) {
+            $data            = implode('/', $lines);
             $this->dataCount = mb_strlen($data);
             parent::write($buffer);
             $buffer->writeString($data);

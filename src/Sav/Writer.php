@@ -16,12 +16,12 @@ class Writer
     /**
      * @var Record\Variable[]
      */
-    public $variables = array();
+    public $variables = [];
 
     /**
      * @var Record\ValueLabel[]
      */
-    public $valueLabels = array();
+    public $valueLabels = [];
 
     /**
      * @var Record\Document
@@ -31,7 +31,7 @@ class Writer
     /**
      * @var Record\Info[]
      */
-    public $info = array();
+    public $info = [];
 
     /**
      * @var Record\Data
@@ -46,13 +46,13 @@ class Writer
     /**
      * Writer constructor.
      *
-     * @param  array  $data
+     * @param array $data
      *
      * @throws \Exception
      */
-    public function __construct($data = array())
+    public function __construct($data = [])
     {
-        $this->buffer = Buffer::factory();
+        $this->buffer          = Buffer::factory();
         $this->buffer->context = $this;
 
         if (!empty($data)) {
@@ -61,15 +61,15 @@ class Writer
     }
 
     /**
-     * @param  array  $data
+     * @param array $data
      *
      * @throws \Exception
      */
     public function write($data)
     {
-        $this->header = new Record\Header($data['header']);
+        $this->header                  = new Record\Header($data['header']);
         $this->header->nominalCaseSize = 0;
-        $this->header->casesCount = 0;
+        $this->header->casesCount      = 0;
 
         $this->info[Record\Info\MachineInteger::SUBTYPE] = $this->prepareInfoRecord(
             Record\Info\MachineInteger::class,
@@ -81,17 +81,17 @@ class Writer
             $data
         );
 
-        $this->info[Record\Info\VariableDisplayParam::SUBTYPE] = new Record\Info\VariableDisplayParam();
-        $this->info[Record\Info\LongVariableNames::SUBTYPE] = new Record\Info\LongVariableNames();
-        $this->info[Record\Info\VeryLongString::SUBTYPE] = new Record\Info\VeryLongString();
+        $this->info[Record\Info\VariableDisplayParam::SUBTYPE]  = new Record\Info\VariableDisplayParam();
+        $this->info[Record\Info\LongVariableNames::SUBTYPE]     = new Record\Info\LongVariableNames();
+        $this->info[Record\Info\VeryLongString::SUBTYPE]        = new Record\Info\VeryLongString();
         $this->info[Record\Info\ExtendedNumberOfCases::SUBTYPE] = $this->prepareInfoRecord(
             Record\Info\ExtendedNumberOfCases::class,
             $data
         );
-        $this->info[Record\Info\VariableAttributes::SUBTYPE] = new Record\Info\VariableAttributes();
-        $this->info[Record\Info\LongStringValueLabels::SUBTYPE] = new Record\Info\LongStringValueLabels();
+        $this->info[Record\Info\VariableAttributes::SUBTYPE]      = new Record\Info\VariableAttributes();
+        $this->info[Record\Info\LongStringValueLabels::SUBTYPE]   = new Record\Info\LongStringValueLabels();
         $this->info[Record\Info\LongStringMissingValues::SUBTYPE] = new Record\Info\LongStringMissingValues();
-        $this->info[Record\Info\CharacterEncoding::SUBTYPE] = new Record\Info\CharacterEncoding('UTF-8');
+        $this->info[Record\Info\CharacterEncoding::SUBTYPE]       = new Record\Info\CharacterEncoding('UTF-8');
 
         $this->data = new Record\Data();
 
@@ -117,39 +117,32 @@ class Writer
             $variable = new Record\Variable();
 
             // TODO: refactory - keep 7 positions so we can add after that for 100 very long string segments
-            $variable->name = 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
-            // $variable->name = strtoupper($var->name);
-
-            // TODO: test
-            if (Variable::FORMAT_TYPE_A === $var->format) {
-                $variable->width = $var->width;
-            } else {
-                $variable->width = 0;
-            }
+            $variable->name  = 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
+            $variable->width = Variable::FORMAT_TYPE_A === $var->format ? $var->width : 0;
 
             $variable->label = $var->label;
-            $variable->print = array(
+            $variable->print = [
                 0,
                 $var->format,
-                $var->width ? min($var->width, 255) : 8,
+                $var->width !== [] ? min($var->width, 255) : 8,
                 $var->decimals,
-            );
-            $variable->write = array(
+            ];
+            $variable->write = [
                 0,
                 $var->format,
-                $var->width ? min($var->width, 255) : 8,
+                $var->width !== [] ? min($var->width, 255) : 8,
                 $var->decimals,
-            );
+            ];
 
             // TODO: refactory
             $shortName = $variable->name;
-            $longName = $var->name;
+            $longName  = $var->name;
 
-            if ($var->attributes) {
+            if ($var->attributes !== []) {
                 $this->info[Record\Info\VariableAttributes::SUBTYPE][$longName] = $var->attributes;
             }
 
-            if ($var->missing) {
+            if ($var->missing !== []) {
                 if ($var->width <= 8) {
                     if (\count($var->missing) >= 3) {
                         $variable->missingValuesFormat = 3;
@@ -166,22 +159,22 @@ class Writer
 
             $this->variables[$idx] = $variable;
 
-            if ($var->values) {
+            if ($var->values !== []) {
                 if ($variable->width > 8) {
-                    $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName] = array(
-                        'width' => $var->width,
+                    $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName] = [
+                        'width'  => $var->width,
                         'values' => $var->values,
-                    );
+                    ];
                 } else {
-                    $valueLabel = new Record\ValueLabel(array(
+                    $valueLabel = new Record\ValueLabel([
                         'variables' => $this->variables,
-                    ));
+                    ]);
                     foreach ($var->values as $key => $value) {
-                        $valueLabel->labels[] = array(
+                        $valueLabel->labels[] = [
                             'value' => $key,
                             'label' => $value,
-                        );
-                        $valueLabel->indexes = array($nominalIdx + 1);
+                        ];
+                        $valueLabel->indexes = [$nominalIdx + 1];
                     }
                     $this->valueLabels[] = $valueLabel;
                 }
@@ -189,22 +182,22 @@ class Writer
 
             $this->info[Record\Info\LongVariableNames::SUBTYPE][$shortName] = $var->name;
 
-            if (Record\Variable::isVeryLong($var->width)) {
+            if (Record\Variable::isVeryLong($var->width) !== 0) {
                 $this->info[Record\Info\VeryLongString::SUBTYPE][$shortName] = $var->width;
             }
 
             $segmentCount = Utils::widthToSegments($var->width);
 
-            for ($i = 0; $i < $segmentCount; ++$i) {
-                $this->info[Record\Info\VariableDisplayParam::SUBTYPE][] = array(
+            for ($i = 0; $i < $segmentCount; $i++) {
+                $this->info[Record\Info\VariableDisplayParam::SUBTYPE][] = [
                     $var->getMeasure(),
                     $var->getColumns(),
                     $var->getAlignment(),
-                );
+                ];
             }
 
             // TODO: refactory
-            $dataCount = \count($var->data);
+            $dataCount = is_countable($var->data) ? \count($var->data) : 0;
 
             if ($dataCount > $this->header->casesCount) {
                 $this->header->casesCount = $dataCount;
@@ -234,9 +227,9 @@ class Writer
 
         // write documents
         if (!empty($data['documents'])) {
-            $this->document = new Record\Document(array(
+            $this->document = new Record\Document([
                     'lines' => $data['documents'],
-                )
+                ]
             );
             $this->document->write($this->buffer);
         }
@@ -297,9 +290,9 @@ class Writer
     }
 
     /**
-     * @param  string  $className
-     * @param  array  $data
-     * @param  string  $group
+     * @param string $className
+     * @param array  $data
+     * @param string $group
      *
      * @throws Exception
      *
@@ -315,7 +308,7 @@ class Writer
         return new $className(
             isset($data[$group]) && isset($data[$group][$key]) ?
                 $data[$group][$key] :
-                array()
+                []
         );
     }
 }

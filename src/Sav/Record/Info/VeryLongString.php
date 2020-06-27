@@ -7,7 +7,7 @@ use SPSS\Sav\Record\Info;
 
 class VeryLongString extends Info
 {
-    const SUBTYPE = 14;
+    const SUBTYPE   = 14;
     const DELIMITER = "\t";
 
     public function read(Buffer $buffer)
@@ -23,7 +23,7 @@ class VeryLongString extends Info
     public function write(Buffer $buffer)
     {
         if ($this->data) {
-            $data = array();
+            $data = [];
             foreach ($this->data as $key => $value) {
                 $data[] = sprintf('%s=%05d%c', $key, $value, 0);
             }

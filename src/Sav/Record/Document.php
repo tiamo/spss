@@ -7,18 +7,18 @@ use SPSS\Sav\Record;
 
 class Document extends Record implements \ArrayAccess
 {
-    const TYPE = 6;
+    const TYPE   = 6;
     const LENGTH = 80;
 
     /**
      * @var array
      */
-    protected $lines = array();
+    protected $lines = [];
 
     public function read(Buffer $buffer)
     {
         $count = $buffer->readInt();
-        for ($i = 0; $i < $count; ++$i) {
+        for ($i = 0; $i < $count; $i++) {
             $this->lines[] = trim($buffer->readString(self::LENGTH));
         }
     }
@@ -41,7 +41,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param  array  $lines
+     * @param array $lines
      */
     public function append($lines)
     {
@@ -51,7 +51,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param  mixed  $offset
+     * @param mixed $offset
      *
      * @return bool
      */
@@ -61,7 +61,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param  mixed  $offset
+     * @param mixed $offset
      *
      * @return mixed
      */
@@ -71,8 +71,8 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param  mixed  $offset
-     * @param  mixed  $value
+     * @param mixed $offset
+     * @param mixed $value
      */
     public function offsetSet($offset, $value)
     {
@@ -80,7 +80,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param  mixed  $offset
+     * @param mixed $offset
      */
     public function offsetUnset($offset)
     {

@@ -10,7 +10,7 @@ class Utils
      * SPSS represents a date as the number of seconds since the epoch, midnight, Oct. 14, 1582.
      *
      * @param $timestamp
-     * @param  string  $format
+     * @param string $format
      *
      * @return false|int
      */
@@ -22,8 +22,8 @@ class Utils
     /**
      * Rounds X up to the next multiple of Y.
      *
-     * @param  int  $x
-     * @param  int  $y
+     * @param int $x
+     * @param int $y
      *
      * @return int
      */
@@ -35,8 +35,8 @@ class Utils
     /**
      * Rounds X down to the prev multiple of Y.
      *
-     * @param  int  $x
-     * @param  int  $y
+     * @param int $x
+     * @param int $y
      *
      * @return int
      */
@@ -63,7 +63,7 @@ class Utils
     /**
      * Convert double to string.
      *
-     * @param  float  $num
+     * @param float $num
      *
      * @return string
      */
@@ -73,7 +73,7 @@ class Utils
     }
 
     /**
-     * @param  string  $str
+     * @param string $str
      *
      * @return float
      */
@@ -87,7 +87,7 @@ class Utils
     }
 
     /**
-     * @param  bool  $unsigned
+     * @param bool $unsigned
      *
      * @return int
      */
@@ -104,25 +104,24 @@ class Utils
 
     /**
      * @param $int
-     * @param  int  $size
+     * @param int $size
      *
      * @return array
      */
     public static function intToBytes($int, $size = 32)
     {
-        $size = self::roundUp($size, 8);
-        $bytes = array();
+        $size  = self::roundUp($size, 8);
+        $bytes = [];
         for ($i = 0; $i < $size; $i += 8) {
             $bytes[] = 0xFF & $int >> $i;
         }
-        $bytes = array_reverse($bytes);
 
-        return $bytes;
+        return array_reverse($bytes);
     }
 
     /**
-     * @param  int  $value
-     * @param  int  $size
+     * @param int $value
+     * @param int $size
      *
      * @return string
      */
@@ -137,8 +136,8 @@ class Utils
     }
 
     /**
-     * @param  int  $value
-     * @param  int  $size
+     * @param int $value
+     * @param int $size
      *
      * @return string
      */
@@ -151,7 +150,7 @@ class Utils
      * Returns the number of bytes of uncompressed case data used for writing a variable of the given WIDTH to a system file.
      * All required space is included, including trailing padding and internal padding.
      *
-     * @param  int  $width
+     * @param int $width
      *
      * @return int
      */
@@ -161,12 +160,12 @@ class Utils
 
         if (0 === $width) {
             $bytes = 8;
-        } elseif (!Variable::isVeryLong($width)) {
+        } elseif (Variable::isVeryLong($width) === 0) {
             $bytes = $width;
         } else {
-            $chunks = $width / Variable::EFFECTIVE_VLS_CHUNK;
+            $chunks    = $width / Variable::EFFECTIVE_VLS_CHUNK;
             $remainder = $width % Variable::EFFECTIVE_VLS_CHUNK;
-            $bytes = floor($chunks) * Variable::REAL_VLS_CHUNK + $remainder;
+            $bytes     = floor($chunks) * Variable::REAL_VLS_CHUNK + $remainder;
         }
 
         return self::roundUp($bytes, 8);
@@ -175,7 +174,7 @@ class Utils
     /**
      * Returns the number of 8-byte units (octs) used to write data for a variable of the given WIDTH.
      *
-     * @param  int  $width
+     * @param int $width
      *
      * @return int
      */
@@ -187,7 +186,7 @@ class Utils
     /**
      * Returns the number of 8-byte units (octs) used to write data for a variable of the given WIDTH.
      *
-     * @param  int  $width
+     * @param int $width
      *
      * @return int
      */
@@ -206,13 +205,13 @@ class Utils
      * A segment is a physical variable in the system file that represents some piece of a logical variable.
      * Only very long string variables have more than one segment.
      *
-     * @param  int  $width
+     * @param int $width
      *
      * @return int
      */
     public static function widthToSegments($width)
     {
-        return Variable::isVeryLong($width) ? ceil($width / Variable::EFFECTIVE_VLS_CHUNK) : 1;
+        return Variable::isVeryLong($width) !== 0 ? ceil($width / Variable::EFFECTIVE_VLS_CHUNK) : 1;
     }
 
     /**
@@ -223,7 +222,7 @@ class Utils
     public static function getSegments($width)
     {
         $count = self::widthToSegments($width);
-        for ($i = 1; $i < $count; ++$i) {
+        for ($i = 1; $i < $count; $i++) {
             yield 255;
         }
         yield $width - ($count - 1) * Variable::EFFECTIVE_VLS_CHUNK;
@@ -233,8 +232,8 @@ class Utils
      * Returns the width to allocate to the given SEGMENT within a variable of the given WIDTH.
      * A segment is a physical variable in the system file that represents some piece of a logical variable.
      *
-     * @param  int  $width
-     * @param  int  $segment
+     * @param int $width
+     * @param int $segment
      *
      * @return int
      */
@@ -243,7 +242,7 @@ class Utils
         $segmentCount = self::widthToSegments($width);
         // assert($segment < $segmentCount);
 
-        if (!Variable::isVeryLong($width)) {
+        if (Variable::isVeryLong($width) === 0) {
             return $width;
         }
 
@@ -254,8 +253,8 @@ class Utils
      * Returns the number of bytes to allocate to the given SEGMENT within a variable of the given width.
      * This is the same as.
      *
-     * @param  mixed  $width
-     * @param  int  $segment
+     * @param mixed $width
+     * @param int   $segment
      *
      * @return int
      *

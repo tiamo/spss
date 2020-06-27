@@ -54,7 +54,7 @@ class Variable extends Record
      *
      * @var array
      */
-    public $print = array(0, 0, 0, 0);
+    public $print = [0, 0, 0, 0];
 
     /**
      * Write format for this variable.
@@ -62,7 +62,7 @@ class Variable extends Record
      *
      * @var array
      */
-    public $write = array(0, 0, 0, 0);
+    public $write = [0, 0, 0, 0];
 
     /**
      * The variable name must begin with a capital letter or the at-sign (‘@’).
@@ -94,12 +94,12 @@ class Variable extends Record
      *
      * @var array
      */
-    public $missingValues = array();
+    public $missingValues = [];
 
     /**
      * Returns true if WIDTH is a very long string width, false otherwise.
      *
-     * @param  int  $width
+     * @param int $width
      *
      * @return int
      */
@@ -110,18 +110,18 @@ class Variable extends Record
 
     public function read(Buffer $buffer)
     {
-        $this->width = $buffer->readInt();
-        $hasLabel = $buffer->readInt();
+        $this->width               = $buffer->readInt();
+        $hasLabel                  = $buffer->readInt();
         $this->missingValuesFormat = $buffer->readInt();
-        $this->print = Utils::intToBytes($buffer->readInt());
-        $this->write = Utils::intToBytes($buffer->readInt());
-        $this->name = rtrim($buffer->readString(8));
-        if ($hasLabel) {
+        $this->print               = Utils::intToBytes($buffer->readInt());
+        $this->write               = Utils::intToBytes($buffer->readInt());
+        $this->name                = rtrim($buffer->readString(8));
+        if ($hasLabel !== 0) {
             $labelLength = $buffer->readInt();
             $this->label = $buffer->readString($labelLength, 4);
         }
         if (0 !== $this->missingValuesFormat) {
-            for ($i = 0, $iMax = abs($this->missingValuesFormat); $i < $iMax; ++$i) {
+            for ($i = 0, $iMax = abs($this->missingValuesFormat); $i < $iMax; $i++) {
                 $this->missingValues[] = $buffer->readDouble();
             }
         }
@@ -130,7 +130,7 @@ class Variable extends Record
     public function write(Buffer $buffer)
     {
         $seg0width = Utils::segmentAllocWidth($this->width, 0);
-        $hasLabel = !empty($this->label);
+        $hasLabel  = !empty($this->label);
 
         $buffer->writeInt(self::TYPE);
         $buffer->writeInt($seg0width);
@@ -142,12 +142,12 @@ class Variable extends Record
 
         if ($hasLabel) {
             // Maxlength is 255 bytes, since we write utf8 a char can be multiple bytes
-            $labelLength = min(mb_strlen($this->label), 255);
-            $label = mb_substr($this->label, 0, $labelLength);
+            $labelLength      = min(mb_strlen($this->label), 255);
+            $label            = mb_substr($this->label, 0, $labelLength);
             $labelLengthBytes = mb_strlen($label, '8bit');
             while ($labelLengthBytes > 255) {
                 // Strip one char, can be multiple bytes
-                $label = mb_substr($label, 0, -1);
+                $label            = mb_substr($label, 0, -1);
                 $labelLengthBytes = mb_strlen($label, '8bit');
             }
             $buffer->writeInt($labelLengthBytes);
@@ -155,7 +155,7 @@ class Variable extends Record
         }
 
         // TODO: test
-        if ($this->missingValuesFormat) {
+        if ($this->missingValuesFormat !== 0) {
             foreach ($this->missingValues as $val) {
                 if (0 === $this->width) {
                     $buffer->writeDouble($val);
@@ -169,11 +169,11 @@ class Variable extends Record
         $this->writeBlank($buffer, $seg0width);
 
         // Write additional segments for very long string variables.
-        if (self::isVeryLong($this->width)) {
+        if (self::isVeryLong($this->width) !== 0) {
             $segmentCount = Utils::widthToSegments($this->width);
-            for ($i = 1; $i < $segmentCount; ++$i) {
+            for ($i = 1; $i < $segmentCount; $i++) {
                 $segmentWidth = Utils::segmentAllocWidth($this->width, $i);
-                $format = Utils::bytesToInt(array(0, 1, max($segmentWidth, 1), 0));
+                $format       = Utils::bytesToInt([0, 1, max($segmentWidth, 1), 0]);
                 $buffer->writeInt(self::TYPE);
                 $buffer->writeInt($segmentWidth);
                 $buffer->writeInt($hasLabel); // No variable label
@@ -192,6 +192,7 @@ class Variable extends Record
     }
 
     /**
+     * @param  Buffer  $buffer
      * @param  int  $width
      */
     public function writeBlank(Buffer $buffer, $width)
@@ -210,7 +211,7 @@ class Variable extends Record
     }
 
     /**
-     * @param  int  $seg
+     * @param int $seg
      *
      * @return string
      */

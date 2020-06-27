@@ -29,17 +29,17 @@ class Data extends Record
     /**
      * @var array [case_index][var_index]
      */
-    public $matrix = array();
+    public $matrix = [];
 
     /**
      * @var array [var_index]
      */
-    public $row = array();
+    public $row = [];
 
     /**
      * @var array Latest opcodes data
      */
-    protected $opcodes = array();
+    protected $opcodes = [];
 
     /**
      * @var int Current opcode index
@@ -57,16 +57,17 @@ class Data extends Record
     protected $dataBuffer;
 
     /**
+     * @param  Buffer  $buffer
      * @param  int  $case
      *
-     * @throws Exception
+     * @return void
      */
     public function readCase(Buffer $buffer, $case)
     {
         /* check if this is the first time */
         if (-1 === $this->startData) {
             $this->opcodeIndex = 8;
-            $this->opcodes = array();
+            $this->opcodes     = [];
 
             $this->startData = $buffer->position();
             if (0 !== $buffer->readInt()) {
@@ -84,7 +85,7 @@ class Data extends Record
         }
 
         $compressed = $buffer->context->header->compression;
-        $bias = $buffer->context->header->bias;
+        $bias       = $buffer->context->header->bias;
         $casesCount = $buffer->context->header->casesCount;
 
         // @var Variable[] $variables
@@ -93,7 +94,7 @@ class Data extends Record
         // @var Record\Info[] $info
         $info = $buffer->context->info;
 
-        $veryLongStrings = array();
+        $veryLongStrings = [];
         if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
             $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
         }
@@ -117,15 +118,15 @@ class Data extends Record
     }
 
     /**
-     * @throws Exception
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
-        if (-1 === $this->startData) {
+        if ($this->startData === -1) {
             $this->startData = $buffer->position();
         }
 
-        if (0 !== $buffer->readInt()) {
+        if ($buffer->readInt() !== 0) {
             throw new \InvalidArgumentException('Error reading data record. Non-zero value found.');
         }
 
@@ -142,7 +143,7 @@ class Data extends Record
         }
 
         $compressed = $buffer->context->header->compression;
-        $bias = $buffer->context->header->bias;
+        $bias       = $buffer->context->header->bias;
         $casesCount = $buffer->context->header->casesCount;
 
         /** @var Variable[] $variables */
@@ -151,7 +152,7 @@ class Data extends Record
         /** @var Record\Info[] $info */
         $info = $buffer->context->info;
 
-        $veryLongStrings = array();
+        $veryLongStrings = [];
         if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
             $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
         }
@@ -164,7 +165,7 @@ class Data extends Record
 
         $this->opcodeIndex = 8;
 
-        for ($case = 0; $case < $casesCount; ++$case) {
+        for ($case = 0; $case < $casesCount; $case++) {
             $this->matrix[$case] = $this->readCaseData(
                 $buffer,
                 $compressed,
@@ -177,7 +178,7 @@ class Data extends Record
     }
 
     /**
-     * @param  array  $row
+     * @param array $row
      */
     public function writeCase(Buffer $buffer, $row)
     {
@@ -194,8 +195,8 @@ class Data extends Record
         }
 
         $compressed = $buffer->context->header->compression;
-        $bias = $buffer->context->header->bias;
-        $casesCount = $buffer->context->header->casesCount;
+        $bias       = $buffer->context->header->bias;
+        // $casesCount = $buffer->context->header->casesCount;
 
         /** @var Variable[] $variables */
         $variables = $buffer->context->variables;
@@ -203,7 +204,7 @@ class Data extends Record
         /** @var Record\Info[] $info */
         $info = $buffer->context->info;
 
-        $veryLongStrings = array();
+        $veryLongStrings = [];
         if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
             $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
         }
@@ -215,7 +216,7 @@ class Data extends Record
         }
 
         if (!isset($this->dataBuffer)) {
-            $this->dataBuffer = Buffer::factory('', array('memory' => true));
+            $this->dataBuffer = Buffer::factory('', ['memory' => true]);
             $buffer->writeInt(self::TYPE);
             $this->startData = $buffer->position();
             $buffer->writeInt(0);
@@ -241,7 +242,7 @@ class Data extends Record
         }
 
         $compressed = $buffer->context->header->compression;
-        $bias = $buffer->context->header->bias;
+        $bias       = $buffer->context->header->bias;
         $casesCount = $buffer->context->header->casesCount;
 
         /** @var Variable[] $variables */
@@ -250,7 +251,7 @@ class Data extends Record
         /** @var Record\Info[] $info */
         $info = $buffer->context->info;
 
-        $veryLongStrings = array();
+        $veryLongStrings = [];
         if (isset($info[Record\Info\VeryLongString::SUBTYPE])) {
             $veryLongStrings = $info[Record\Info\VeryLongString::SUBTYPE]->toArray();
         }
@@ -264,10 +265,10 @@ class Data extends Record
         $buffer->writeInt(self::TYPE);
         $this->startData = $buffer->position();
         $buffer->writeInt(0);
-        $this->dataBuffer = Buffer::factory('', array('memory' => true));
+        $this->dataBuffer = Buffer::factory('', ['memory' => true]);
 
         if (\count($this->matrix) > 0) {
-            for ($case = 0; $case < $casesCount; ++$case) {
+            for ($case = 0; $case < $casesCount; $case++) {
                 $row = $this->matrix[$case];
                 $this->writeCaseData(
                     $buffer,
@@ -313,12 +314,13 @@ class Data extends Record
     }
 
     /**
+     * @param  Buffer  $buffer
      * @return int
      */
     protected function readOpcode(Buffer $buffer)
     {
         if ($this->opcodeIndex >= 8) {
-            $this->opcodes = $buffer->readBytes(8);
+            $this->opcodes     = $buffer->readBytes(8);
             $this->opcodeIndex = 0;
         }
 
@@ -326,6 +328,7 @@ class Data extends Record
     }
 
     /**
+     * @param  Buffer  $buffer
      * @param  int  $opcode
      */
     protected function writeOpcode(Buffer $buffer, $opcode)
@@ -336,7 +339,7 @@ class Data extends Record
                 $buffer->write(\chr($opc));
             }
             $padding = max(8 - \count($this->opcodes), 0);
-            for ($i = 0; $i < $padding; ++$i) {
+            for ($i = 0; $i < $padding; $i++) {
                 $buffer->write(\chr(self::OPCODE_NOP));
             }
             /* @noinspection NotOptimalIfConditionsInspection */
@@ -347,7 +350,7 @@ class Data extends Record
                 $this->dataBuffer->seek($dataPos);
                 $buffer->seek($pos);
             } else {
-                $this->opcodes = array();
+                $this->opcodes     = [];
                 $this->opcodeIndex = 0;
                 $this->dataBuffer->rewind();
                 $buffer->writeStream($this->dataBuffer->getStream());
@@ -361,26 +364,25 @@ class Data extends Record
     }
 
     /**
+     * @param  Buffer  $buffer
      * @param  bool  $compressed
      * @param  int  $bias
      * @param  array  $variables
      * @param  array  $veryLongStrings
      * @param  int  $sysmis
      *
-     * @throws Exception
-     *
      * @return array
      */
     protected function readCaseData(Buffer $buffer, $compressed, $bias, $variables, $veryLongStrings, $sysmis)
     {
-        $result = array();
+        $result   = [];
         $varCount = \count($variables);
-        $varNum = 0;
+        $varNum   = 0;
 
-        for ($index = 0; $index < $varCount; ++$index) {
-            $var = $variables[$index];
+        for ($index = 0; $index < $varCount; $index++) {
+            $var       = $variables[$index];
             $isNumeric = 0 === $var->width && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
-            $width = isset($var->write[2]) ? $var->write[2] : $var->width;
+            $width     = isset($var->write[2]) ? $var->write[2] : $var->width;
 
             // var_dump($var);
             // exit;
@@ -408,22 +410,18 @@ class Data extends Record
                     }
                 }
             } else {
-                $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                $width           = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
                 $result[$varNum] = '';
-                $segmentsCount = Utils::widthToSegments($width);
-                $opcode = self::OPCODE_RAW_DATA;
-                for ($s = 0; $s < $segmentsCount; ++$s) {
+                $segmentsCount   = Utils::widthToSegments($width);
+                $opcode          = self::OPCODE_RAW_DATA;
+                for ($s = 0; $s < $segmentsCount; $s++) {
                     $segWidth = Utils::segmentAllocWidth($width, $s);
                     if (self::OPCODE_NOP === $opcode || self::OPCODE_EOF === $opcode) {
                         // If next segments are empty too, skip
                         continue;
                     }
                     for ($i = $segWidth; $i > 0; $i -= 8) {
-                        if ($segWidth = 255) {
-                            $chunkSize = min($i, 8);
-                        } else {
-                            $chunkSize = 8;
-                        }
+                        $chunkSize = ($segWidth = 255) !== 0 ? min($i, 8) : 8;
 
                         $val = '';
                         if (!$compressed) {
@@ -449,13 +447,14 @@ class Data extends Record
                     $result[$varNum] = rtrim($result[$varNum]);
                 }
             }
-            ++$varNum;
+            $varNum++;
         }
 
         return $result;
     }
 
     /**
+     * @param  Buffer  $buffer
      * @param  array  $row
      * @param  bool  $compressed
      * @param  int  $bias
@@ -463,7 +462,6 @@ class Data extends Record
      * @param  array  $veryLongStrings
      * @param  int  $sysmis
      *
-     * @throws Exception
      */
     protected function writeCaseData(Buffer $buffer, $row, $compressed, $bias, $variables, $veryLongStrings, $sysmis)
     {
@@ -472,7 +470,7 @@ class Data extends Record
 
             // $isNumeric = $var->width == 0;
             $isNumeric = 0 === $var->width && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
-            $width = isset($var->write[2]) ? $var->write[2] : $var->width;
+            $width     = isset($var->write[2]) ? $var->write[2] : $var->width;
 
             if ($isNumeric) {
                 if (!$compressed) {
@@ -488,18 +486,14 @@ class Data extends Record
             } elseif (!$compressed) {
                 $buffer->writeString($value, Utils::roundUp($width, 8));
             } else {
-                $offset = 0;
-                $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                $offset        = 0;
+                $width         = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
                 $segmentsCount = Utils::widthToSegments($width);
-                for ($s = 0; $s < $segmentsCount; ++$s) {
+                for ($s = 0; $s < $segmentsCount; $s++) {
                     $segWidth = Utils::segmentAllocWidth($width, $s);
                     for ($i = $segWidth; $i > 0; $i -= 8) {
-                        if ($segWidth = 255) {
-                            $chunkSize = min($i, 8);
-                        } else {
-                            $chunkSize = 8;
-                        }
-                        $val = substr($value, $offset, $chunkSize); // Read 8 byte segements, don't use mbsubstr here
+                        $chunkSize = ($segWidth = 255) !== 0 ? min($i, 8) : 8;
+                        $val       = substr($value, $offset, $chunkSize); // Read 8 byte segements, don't use mbsubstr here
                         if ('' === $val) {
                             $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
                         } else {

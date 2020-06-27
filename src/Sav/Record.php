@@ -9,9 +9,9 @@ abstract class Record implements RecordInterface
     /**
      * Record constructor.
      *
-     * @param  array  $data
+     * @param array $data
      */
-    public function __construct($data = array())
+    public function __construct($data = [])
     {
         foreach ($data as $key => $value) {
             $this->{$key} = $value;
@@ -19,11 +19,12 @@ abstract class Record implements RecordInterface
     }
 
     /**
+     * @param  Buffer  $buffer
      * @param  array  $data
      *
      * @return static
      */
-    public static function fill(Buffer $buffer, $data = array())
+    public static function fill(Buffer $buffer, $data = [])
     {
         $record = new static($data);
         $record->read($buffer);
@@ -36,7 +37,7 @@ abstract class Record implements RecordInterface
      *
      * @return static
      */
-    public static function create($data = array())
+    public static function create($data = [])
     {
         return new static($data);
     }
@@ -46,6 +47,6 @@ abstract class Record implements RecordInterface
      */
     public function toArray()
     {
-        return array();
+        return [];
     }
 }

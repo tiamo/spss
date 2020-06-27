@@ -19,27 +19,27 @@ class Reader
     /**
      * @var Variable[]
      */
-    public $variables = array();
+    public $variables = [];
 
     /**
      * @var ValueLabel[]
      */
-    public $valueLabels = array();
+    public $valueLabels = [];
 
     /**
      * @var array
      */
-    public $documents = array();
+    public $documents = [];
 
     /**
      * @var Info[]
      */
-    public $info = array();
+    public $info = [];
 
     /**
      * @var array
      */
-    public $data = array();
+    public $data = [];
 
     /**
      * @var int
@@ -58,25 +58,27 @@ class Reader
 
     /**
      * Reader constructor.
+     *
+     * @param  Buffer  $buffer
      */
     private function __construct(Buffer $buffer)
     {
-        $this->_buffer = $buffer;
+        $this->_buffer          = $buffer;
         $this->_buffer->context = $this;
     }
 
     /**
-     * @param  string  $file
+     * @param string $file
      *
      * @return Reader
      */
     public static function fromFile($file)
     {
-        return new self(Buffer::factory(fopen($file, 'r')));
+        return new self(Buffer::factory(fopen($file, 'rb')));
     }
 
     /**
-     * @param  string  $str
+     * @param string $str
      *
      * @return Reader
      */
@@ -122,23 +124,23 @@ class Reader
 
         // TODO: refactory
         $infoCollection = new Record\InfoCollection();
-        $tempVars = array();
-        $posVar = 0;
+        $tempVars       = [];
+        $posVar         = 0;
 
         do {
             $recType = $this->_buffer->readInt();
             switch ($recType) {
                 case Record\Variable::TYPE:
-                    $variable = Record\Variable::fill($this->_buffer);
+                    $variable               = Record\Variable::fill($this->_buffer);
                     $variable->realPosition = $posVar;
-                    $tempVars[] = $variable;
-                    ++$posVar;
+                    $tempVars[]             = $variable;
+                    $posVar++;
                     break;
                 case Record\ValueLabel::TYPE:
-                    $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, array(
+                    $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [
                         // TODO: refactory
                         'variables' => $tempVars,
-                    ));
+                    ]);
                     break;
                 case Record\Info::TYPE:
                     $this->info = $infoCollection->fill($this->_buffer);
@@ -151,7 +153,7 @@ class Reader
 
         // Excluding the records that are creating only as a consequence of very long string records
         // from the variables computation.
-        $veryLongStrings = array();
+        $veryLongStrings = [];
         if (isset($this->info[Record\Info\VeryLongString::SUBTYPE])) {
             $veryLongStrings = $this->info[Record\Info\VeryLongString::SUBTYPE]->toArray();
         }
@@ -167,7 +169,7 @@ class Reader
                     );
                     $this->variables[] = $var;
                 }
-                --$segmentsCount;
+                $segmentsCount--;
             }
         }
 
@@ -193,7 +195,7 @@ class Reader
             $this->record = Record\Data::create();
         }
 
-        ++$this->lastCase;
+        $this->lastCase++;
 
         if (($this->lastCase >= 0) && ($this->lastCase < $this->_buffer->context->header->casesCount)) {
             $this->record->readCase($this->_buffer, $this->lastCase);

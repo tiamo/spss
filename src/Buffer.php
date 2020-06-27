@@ -32,10 +32,10 @@ class Buffer
     /**
      * Buffer constructor.
      *
-     * @param resource $stream stream resource to wrap
-     * @param array $options associative array of options
+     * @param resource $stream  stream resource to wrap
+     * @param array    $options associative array of options
      */
-    private function __construct($stream, $options = array())
+    private function __construct($stream, $options = [])
     {
         if (!\is_resource($stream)) {
             throw new \InvalidArgumentException('Stream must be a resource.');
@@ -51,11 +51,11 @@ class Buffer
      * Create a new stream based on the input type.
      *
      * @param resource|string $resource Entity body data
-     * @param array $options Additional options
+     * @param array           $options  Additional options
      *
      * @return Buffer
      */
-    public static function factory($resource = '', $options = array())
+    public static function factory($resource = '', $options = [])
     {
         $type = \gettype($resource);
 
@@ -82,7 +82,7 @@ class Buffer
     }
 
     /**
-     * @param int $length
+     * @param int  $length
      * @param bool $skip
      *
      * @throws Exception
@@ -156,8 +156,8 @@ class Buffer
     }
 
     /**
-     * @param int $length
-     * @param int $round
+     * @param int  $length
+     * @param int  $round
      * @param null $charset
      *
      * @return false|string
@@ -165,13 +165,13 @@ class Buffer
     public function readString($length, $round = 0, $charset = null)
     {
         if ($bytes = $this->readBytes($length)) {
-            if ($round) {
+            if ($round !== 0) {
                 $this->skip(Utils::roundUp($length, $round) - $length);
             }
             $str = Utils::bytesToString($bytes);
             if ($charset) {
                 $str = mb_convert_encoding($str, 'utf8', $charset);
-            } elseif ($this->charset) {
+            } elseif (!empty($this->charset)) {
                 $str = mb_convert_encoding($str, 'utf8', $this->charset);
             }
 
@@ -214,7 +214,7 @@ class Buffer
     /**
      * @param $data
      * @param int|string $length
-     * @param null $charset
+     * @param null       $charset
      *
      * @return false|int
      */
@@ -222,7 +222,7 @@ class Buffer
     {
         if ($charset) {
             $data = mb_convert_encoding($data, 'utf8', $charset);
-        } elseif ($this->charset) {
+        } elseif (!empty($this->charset)) {
             $data = mb_convert_encoding($data, 'utf8', $this->charset);
         }
 
@@ -230,7 +230,7 @@ class Buffer
     }
 
     /**
-     * @param string $data
+     * @param string   $data
      * @param int|null $length
      *
      * @return false|int
@@ -342,7 +342,7 @@ class Buffer
      */
     public function position()
     {
-        //        return ftell($this->_stream);
+        // return ftell($this->_stream);
         return $this->_position;
     }
 
@@ -395,7 +395,7 @@ class Buffer
     }
 
     /**
-     * @param int $length
+     * @param int    $length
      * @param string $format
      *
      * @return false|int|float|float

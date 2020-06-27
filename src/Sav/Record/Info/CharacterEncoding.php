@@ -14,12 +14,7 @@ class CharacterEncoding extends Info
      */
     public $value;
 
-    /**
-     * Record constructor.
-     *
-     * @param array $data
-     * @param mixed $value
-     */
+    /** @noinspection MagicMethodsValidityInspection */
     public function __construct($value)
     {
         $this->value = $value;

@@ -12,7 +12,7 @@ class MachineInteger extends Info
     /**
      * @var array [Major, Minor, Revision]
      */
-    public $version = array(1, 0, 0);
+    public $version = [1, 0, 0];
 
     /**
      * @var int machine code
@@ -21,36 +21,36 @@ class MachineInteger extends Info
 
     /**
      * @var int Floating point representation code.
-     * For IEEE 754 systems this is 1.
-     * IBM 370 sets this to 2,
-     * and DEC VAX E to 3.
+     *          For IEEE 754 systems this is 1.
+     *          IBM 370 sets this to 2,
+     *          and DEC VAX E to 3.
      */
     public $floatingPointRep = 1;
 
     /**
      * @var int Compression code.
-     * Always set to 1, regardless of whether or how the file is compressed.
+     *          Always set to 1, regardless of whether or how the file is compressed.
      */
     public $compressionCode = 1;
 
     /**
      * @var int Machine endianness.
-     * 1 indicates big-endian,
-     * 2 indicates little-endian.
+     *          1 indicates big-endian,
+     *          2 indicates little-endian.
      */
     public $endianness = 2;
 
     /**
      * @var int Character code.
-     * The following values have been actually observed in system files:
-     * 1        EBCDIC.
-     * 2        7-bit ASCII.
-     * 3        8-bit ASCII.
-     * 4        DEC Kanji.
-     * 1250     The windows-1250 code page for Central European and Eastern European languages.
-     * 1252     The windows-1252 code page for Western European languages.
-     * 28591    ISO 8859-1.
-     * 65001    UTF-8.
+     *          The following values have been actually observed in system files:
+     *          1        EBCDIC.
+     *          2        7-bit ASCII.
+     *          3        8-bit ASCII.
+     *          4        DEC Kanji.
+     *          1250     The windows-1250 code page for Central European and Eastern European languages.
+     *          1252     The windows-1252 code page for Western European languages.
+     *          28591    ISO 8859-1.
+     *          65001    UTF-8.
      */
     public $characterCode = 65001;
 
@@ -67,12 +67,12 @@ class MachineInteger extends Info
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
-        $this->version = array($buffer->readInt(), $buffer->readInt(), $buffer->readInt());
-        $this->machineCode = $buffer->readInt();
+        $this->version          = [$buffer->readInt(), $buffer->readInt(), $buffer->readInt()];
+        $this->machineCode      = $buffer->readInt();
         $this->floatingPointRep = $buffer->readInt();
-        $this->compressionCode = $buffer->readInt();
-        $this->endianness = $buffer->readInt();
-        $this->characterCode = $buffer->readInt();
+        $this->compressionCode  = $buffer->readInt();
+        $this->endianness       = $buffer->readInt();
+        $this->characterCode    = $buffer->readInt();
     }
 
     public function write(Buffer $buffer)

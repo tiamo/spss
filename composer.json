@@ -59,8 +59,6 @@
     "test:types": "phpstan analyse --ansi --memory-limit=0",
     "test:unit": "phpunit --no-coverage",
     "test": [
-      "@test:lint",
-      "@test:types",
       "@test:unit"
     ]
   }

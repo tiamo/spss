@@ -10,6 +10,9 @@ if (!\defined('PHP_FLOAT_MAX')) {
     \define('PHP_FLOAT_MAX', 1.7976931348623e+308);
 }
 
+/**
+ * @see \SPSS\Tests\MachineFloatingPointTest
+ */
 class MachineFloatingPoint extends Info
 {
     const SUBTYPE = 4;
@@ -42,22 +45,22 @@ class MachineFloatingPoint extends Info
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
-        $this->sysmis = $buffer->readDouble();
+        $this->sysmis  = $buffer->readDouble();
         $this->highest = $buffer->readDouble();
-        $this->lowest = $buffer->readDouble();
+        $this->lowest  = $buffer->readDouble();
     }
 
     public function write(Buffer $buffer)
     {
-        if (!$this->sysmis) {
+        if ($this->sysmis === 0.0) {
             $this->sysmis = -PHP_FLOAT_MAX;
         }
 
-        if (!$this->highest) {
+        if ($this->highest === 0.0) {
             $this->highest = PHP_FLOAT_MAX;
         }
 
-        if (!$this->lowest) {
+        if ($this->lowest === 0.0) {
             $this->lowest = -PHP_FLOAT_MAX;
         }
 

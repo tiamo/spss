@@ -7,13 +7,10 @@ use SPSS\Sav\Record\Info;
 
 class LongVariableNames extends Info
 {
-    const SUBTYPE = 13;
+    const SUBTYPE   = 13;
     const DELIMITER = "\t";
 
-    /**
-     * @var array
-     */
-    public $data = array();
+    public $data = [];
 
     public function read(Buffer $buffer)
     {

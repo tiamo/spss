@@ -31,7 +31,7 @@ class Header extends Record
     public $prodName = '@(#) SPSS DATA FILE';
 
     /**
-     * @var int Normally set to 2, although a few system files have been spotted in the wild with a value of 3 here.
+     * @var int normally set to 2, although a few system files have been spotted in the wild with a value of 3 here
      */
     public $layoutCode = 2;
 
@@ -99,13 +99,12 @@ class Header extends Record
     public $fileLabel;
 
     /**
-     * @param  Buffer  $buffer
      * @throws Exception
      */
     public function read(Buffer $buffer)
     {
         $this->recType = $buffer->readString(4);
-        if (! ($this->recType === self::NORMAL_REC_TYPE || $this->recType === self::ZLIB_REC_TYPE)) {
+        if (!(self::NORMAL_REC_TYPE === $this->recType || self::ZLIB_REC_TYPE === $this->recType)) {
             throw new Exception('Read header error: this is not a valid SPSS file. Does not start with $FL2 or $FL3.');
         }
         $this->prodName = trim($buffer->readString(60));
@@ -113,7 +112,7 @@ class Header extends Record
 
         // layoutCode should be 2 or 3.
         // If not swap bytes and check again which would then indicate big-endian
-        if ($this->layoutCode !== 2 && $this->layoutCode !== 3) {
+        if (2 !== $this->layoutCode && 3 !== $this->layoutCode) {
             // try to flip to big-endian mode and read again
             $buffer->isBigEndian = true;
             $buffer->skip(-4);
@@ -133,9 +132,6 @@ class Header extends Record
         $buffer->skip(3);
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
         $buffer->write($this->recType);
@@ -150,5 +146,17 @@ class Header extends Record
         $buffer->writeString($this->creationTime, 8);
         $buffer->writeString($this->fileLabel, 64);
         $buffer->writeNull(3);
+    }
+
+    public function increaseCasesCount(Buffer $buffer)
+    {
+        // Jump to the position of the casesCount in the header, re-write it and keep the current position.
+        // recType + prodName + layoutCode + nominalCaseSize + compression + weightIndex
+        // 4       + 60       + 4          + 4               + 4           + 4 = 80
+        ++$this->casesCount;
+        $pos = $buffer->position();
+        $buffer->seek(80);
+        $buffer->writeInt($this->casesCount);
+        $buffer->seek($pos);
     }
 }

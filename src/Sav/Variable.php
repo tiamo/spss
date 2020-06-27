@@ -68,27 +68,27 @@ class Variable
     public $measure;
     public $role;
     public $label;
-    public $values = [];
-    public $missing = [];
+    public $values = array();
+    public $missing = array();
 
     /**
      * @var array
      */
-    public $attributes = [
+    public $attributes = array(
         // '$@Role' => self::ROLE_BOTH
-    ];
+    );
 
     /**
      * @var array
      */
-    public $data = [];
+    public $data = array();
 
     /**
      * Variable constructor.
      *
      * @param  array  $data
      */
-    public function __construct($data = [])
+    public function __construct($data = array())
     {
         foreach ($data as $key => $value) {
             $this->{$key} = $value;
@@ -97,17 +97,18 @@ class Variable
 
     /**
      * @param  int  $format
+     *
      * @return bool
      */
     public static function isNumberFormat($format)
     {
-        return in_array($format, [
+        return \in_array($format, array(
             self::FORMAT_TYPE_COMMA,
             self::FORMAT_TYPE_F,
             self::FORMAT_TYPE_DATETIME,
             self::FORMAT_TYPE_DATE,
-            self::FORMAT_TYPE_TIME
-        ], true);
+            self::FORMAT_TYPE_TIME,
+        ), true);
     }
 
     /**
@@ -116,91 +117,93 @@ class Variable
      * (string <= 8 chars) and a meaning (long string).
      * Non-existent codes have a (null, null) tuple returned.
      *
-     * @param  integer  $format
+     * @param  int  $format
+     *
      * @return array
      */
     public static function getFormatInfo($format)
     {
         switch ($format) {
             case 0:
-                return ['', 'Continuation of string variable'];
+                return array('', 'Continuation of string variable');
             case self::FORMAT_TYPE_A:
-                return ['A', 'Alphanumeric'];
+                return array('A', 'Alphanumeric');
             case self::FORMAT_TYPE_AHEX:
-                return ['AHEX', 'alphanumeric hexadecimal'];
+                return array('AHEX', 'alphanumeric hexadecimal');
             case self::FORMAT_TYPE_COMMA:
-                return ['COMMA', 'F format with commas'];
+                return array('COMMA', 'F format with commas');
             case self::FORMAT_TYPE_DOLLAR:
-                return ['DOLLAR', 'Commas and floating point dollar sign'];
+                return array('DOLLAR', 'Commas and floating point dollar sign');
             case self::FORMAT_TYPE_F:
-                return ['F', 'F (default numeric) format'];
+                return array('F', 'F (default numeric) format');
             case self::FORMAT_TYPE_IB:
-                return ['IB', 'Integer binary'];
+                return array('IB', 'Integer binary');
             case self::FORMAT_TYPE_PIBHEX:
-                return ['PIBHEX', 'Positive binary integer - hexadecimal'];
+                return array('PIBHEX', 'Positive binary integer - hexadecimal');
             case self::FORMAT_TYPE_P:
-                return ['P', 'Packed decimal'];
+                return array('P', 'Packed decimal');
             case self::FORMAT_TYPE_PIB:
-                return ['PIB', 'Positive integer binary (Unsigned)'];
+                return array('PIB', 'Positive integer binary (Unsigned)');
             case self::FORMAT_TYPE_PK:
-                return ['PK', 'Positive packed decimal (Unsigned)'];
+                return array('PK', 'Positive packed decimal (Unsigned)');
             case self::FORMAT_TYPE_RB:
-                return ['RB', 'Floating point binary'];
+                return array('RB', 'Floating point binary');
             case self::FORMAT_TYPE_RBHEX:
-                return ['RBHEX', 'Floating point binary - hexadecimal'];
+                return array('RBHEX', 'Floating point binary - hexadecimal');
             case self::FORMAT_TYPE_Z:
-                return ['Z', 'Zoned decimal'];
+                return array('Z', 'Zoned decimal');
             case self::FORMAT_TYPE_N:
-                return ['N', 'N format - unsigned with leading zeros'];
+                return array('N', 'N format - unsigned with leading zeros');
             case self::FORMAT_TYPE_E:
-                return ['E', 'E format - with explicit power of ten'];
+                return array('E', 'E format - with explicit power of ten');
             case self::FORMAT_TYPE_DATE:
-                return ['DATE', 'Date format dd-mmm-yyyy'];
+                return array('DATE', 'Date format dd-mmm-yyyy');
             case self::FORMAT_TYPE_TIME:
-                return ['TIME', 'Time format hh:mm:ss.s'];
+                return array('TIME', 'Time format hh:mm:ss.s');
             case self::FORMAT_TYPE_DATETIME:
-                return ['DATETIME', 'Date and time'];
+                return array('DATETIME', 'Date and time');
             case self::FORMAT_TYPE_ADATE:
-                return ['ADATE', 'Date in mm/dd/yyyy form'];
+                return array('ADATE', 'Date in mm/dd/yyyy form');
             case self::FORMAT_TYPE_JDATE:
-                return ['JDATE', 'Julian date - yyyyddd'];
+                return array('JDATE', 'Julian date - yyyyddd');
             case self::FORMAT_TYPE_DTIME:
-                return ['DTIME', 'Date-time dd hh:mm:ss.s'];
+                return array('DTIME', 'Date-time dd hh:mm:ss.s');
             case self::FORMAT_TYPE_WKDAY:
-                return ['WKDAY', 'Day of the week'];
+                return array('WKDAY', 'Day of the week');
             case self::FORMAT_TYPE_MONTH:
-                return ['MONTH', 'Month'];
+                return array('MONTH', 'Month');
             case self::FORMAT_TYPE_MOYR:
-                return ['MOYR', 'mmm yyyy'];
+                return array('MOYR', 'mmm yyyy');
             case self::FORMAT_TYPE_QYR:
-                return ['QYR', 'q Q yyyy'];
+                return array('QYR', 'q Q yyyy');
             case self::FORMAT_TYPE_WKYR:
-                return ['WKYR', 'ww WK yyyy'];
+                return array('WKYR', 'ww WK yyyy');
             case self::FORMAT_TYPE_PCT:
-                return ['PCT', 'Percent - F followed by "%"'];
+                return array('PCT', 'Percent - F followed by "%"');
             case self::FORMAT_TYPE_DOT:
-                return ['DOT', 'Like COMMA, switching dot for comma'];
+                return array('DOT', 'Like COMMA, switching dot for comma');
             case self::FORMAT_TYPE_CCA:
-                return ['CCA', 'User-programmable currency format (1)'];
+                return array('CCA', 'User-programmable currency format (1)');
             case self::FORMAT_TYPE_CCB:
-                return ['CCB', 'User-programmable currency format (2)'];
+                return array('CCB', 'User-programmable currency format (2)');
             case self::FORMAT_TYPE_CCC:
-                return ['CCC', 'User-programmable currency format (3)'];
+                return array('CCC', 'User-programmable currency format (3)');
             case self::FORMAT_TYPE_CCD:
-                return ['CCD', 'User-programmable currency format (4)'];
+                return array('CCD', 'User-programmable currency format (4)');
             case self::FORMAT_TYPE_CCE:
-                return ['CCE', 'User-programmable currency format (5)'];
+                return array('CCE', 'User-programmable currency format (5)');
             case self::FORMAT_TYPE_EDATE:
-                return ['EDATE', 'Date in dd.mm.yyyy style'];
+                return array('EDATE', 'Date in dd.mm.yyyy style');
             case self::FORMAT_TYPE_SDATE:
-                return ['SDATE', 'Date in yyyy/mm/dd style'];
+                return array('SDATE', 'Date in yyyy/mm/dd style');
         }
 
-        return [null, null];
+        return array(null, null);
     }
 
     /**
      * @param  int  $alignment
+     *
      * @return string
      */
     public static function alignmentToString($alignment)
@@ -222,11 +225,11 @@ class Variable
      */
     public function getMeasure()
     {
-        if ($this->measure !== null) {
+        if (null !== $this->measure) {
             return $this->measure;
         }
 
-        return $this->width == 0 ? self::MEASURE_UNKNOWN : self::MEASURE_NOMINAL;
+        return 0 === $this->width ? self::MEASURE_UNKNOWN : self::MEASURE_NOMINAL;
     }
 
     /**
@@ -234,11 +237,11 @@ class Variable
      */
     public function getAlignment()
     {
-        if ($this->alignment !== null) {
+        if (null !== $this->alignment) {
             return $this->alignment;
         }
 
-        return $this->width == 0 ? self::ALIGN_RIGHT : self::ALIGN_LEFT;
+        return 0 === $this->width ? self::ALIGN_RIGHT : self::ALIGN_LEFT;
     }
 
     /**
@@ -246,7 +249,7 @@ class Variable
      */
     public function getColumns()
     {
-        if ($this->columns !== null) {
+        if (null !== $this->columns) {
             return $this->columns;
         }
 

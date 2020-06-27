@@ -13,7 +13,7 @@ class Info extends Record implements \ArrayAccess
     /**
      * @var array
      */
-    protected $data = [];
+    protected $data = array();
 
     /**
      * @var int Size of each piece of data in the data part, in bytes
@@ -25,18 +25,12 @@ class Info extends Record implements \ArrayAccess
      */
     protected $dataCount = 0;
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         $this->dataSize = $buffer->readInt();
         $this->dataCount = $buffer->readInt();
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
         $buffer->writeInt(self::TYPE);
@@ -55,6 +49,7 @@ class Info extends Record implements \ArrayAccess
 
     /**
      * @param  mixed  $offset
+     *
      * @return bool
      */
     public function offsetExists($offset)
@@ -64,6 +59,7 @@ class Info extends Record implements \ArrayAccess
 
     /**
      * @param  mixed  $offset
+     *
      * @return mixed
      */
     public function offsetGet($offset)
@@ -77,7 +73,11 @@ class Info extends Record implements \ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
-        $this->data[$offset] = $value;
+        if (null === $offset) {
+            $this->data[] = $value;
+        } else {
+            $this->data[$offset] = $value;
+        }
     }
 
     /**

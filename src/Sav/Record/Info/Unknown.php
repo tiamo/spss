@@ -7,24 +7,18 @@ use SPSS\Sav\Record\Info;
 
 class Unknown extends Info
 {
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
         $this->data['raw'] = $buffer->readString($this->dataSize * $this->dataCount);
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
-        if (! isset($this->data['raw'])) {
+        if (!isset($this->data['raw'])) {
             $this->data['raw'] = '';
         }
-        $this->dataCount = strlen($this->data['raw']);
+        $this->dataCount = \strlen($this->data['raw']);
         parent::write($buffer);
         $buffer->writeString($this->data['raw']);
     }

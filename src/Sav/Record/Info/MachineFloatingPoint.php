@@ -6,8 +6,8 @@ use SPSS\Buffer;
 use SPSS\Sav\Record\Info;
 
 // Available as of PHP 7.2.0.
-if (! defined('PHP_FLOAT_MAX')) {
-    define('PHP_FLOAT_MAX', 1.7976931348623e+308);
+if (!\defined('PHP_FLOAT_MAX')) {
+    \define('PHP_FLOAT_MAX', 1.7976931348623e+308);
 }
 
 class MachineFloatingPoint extends Info
@@ -15,33 +15,30 @@ class MachineFloatingPoint extends Info
     const SUBTYPE = 4;
 
     /**
-     * @var double
+     * @var float
      */
     public $sysmis;
 
     /**
-     * @var double
+     * @var float
      */
     public $highest;
 
     /**
-     * @var double
+     * @var float
      */
     public $lowest;
 
     /**
-     * @var int Always set to 8.
+     * @var int always set to 8
      */
     protected $dataSize = 8;
 
     /**
-     * @var int Always set to 3.
+     * @var int always set to 3
      */
     protected $dataCount = 3;
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
@@ -50,20 +47,17 @@ class MachineFloatingPoint extends Info
         $this->lowest = $buffer->readDouble();
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
-        if (! $this->sysmis) {
+        if (!$this->sysmis) {
             $this->sysmis = -PHP_FLOAT_MAX;
         }
 
-        if (! $this->highest) {
+        if (!$this->highest) {
             $this->highest = PHP_FLOAT_MAX;
         }
 
-        if (! $this->lowest) {
+        if (!$this->lowest) {
             $this->lowest = -PHP_FLOAT_MAX;
         }
 

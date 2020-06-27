@@ -10,7 +10,7 @@ class ExtendedNumberOfCases extends Info
     const SUBTYPE = 16;
 
     /**
-     * @var double
+     * @var float
      */
     public $ncases = 0;
 
@@ -24,9 +24,6 @@ class ExtendedNumberOfCases extends Info
      */
     protected $dataCount = 2;
 
-    /**
-     * @param Buffer $buffer
-     */
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
@@ -34,9 +31,6 @@ class ExtendedNumberOfCases extends Info
         $this->ncases = $buffer->readDouble();
     }
 
-    /**
-     * @param Buffer $buffer
-     */
     public function write(Buffer $buffer)
     {
         parent::write($buffer);

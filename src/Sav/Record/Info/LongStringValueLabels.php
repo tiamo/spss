@@ -12,10 +12,9 @@ class LongStringValueLabels extends Info
     /**
      * @var array
      */
-    public $data = [];
+    public $data = array();
 
     /**
-     * @param  Buffer  $buffer
      * @throws \SPSS\Exception
      */
     public function read(Buffer $buffer)
@@ -26,11 +25,11 @@ class LongStringValueLabels extends Info
             $varName = $buffer->readString($varNameLength);
             $varWidth = $buffer->readInt(); // The width of the variable, in bytes, which will be between 9 and 32767
             $valuesCount = $buffer->readInt();
-            $this->data[$varName] = [
+            $this->data[$varName] = array(
                 'width' => $varWidth,
-                'values' => [],
-            ];
-            for ($i = 0; $i < $valuesCount; $i++) {
+                'values' => array(),
+            );
+            for ($i = 0; $i < $valuesCount; ++$i) {
                 $valueLength = $buffer->readInt();
                 $value = rtrim($buffer->readString($valueLength));
                 $labelLength = $buffer->readInt();
@@ -40,24 +39,21 @@ class LongStringValueLabels extends Info
         }
     }
 
-    /**
-     * @param  \SPSS\Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
-        $localBuffer = Buffer::factory('', ['memory' => true]);
+        $localBuffer = Buffer::factory('', array('memory' => true));
         foreach ($this->data as $varName => $data) {
-            if (! isset($data['width'])) {
+            if (!isset($data['width'])) {
                 throw new \InvalidArgumentException('width required');
             }
-            if (! isset($data['values'])) {
+            if (!isset($data['values'])) {
                 throw new \InvalidArgumentException('values required');
             }
             $width = (int) $data['width'];
             $localBuffer->writeInt(mb_strlen($varName));
             $localBuffer->writeString($varName);
             $localBuffer->writeInt($width);
-            $localBuffer->writeInt(count($data['values']));
+            $localBuffer->writeInt(\count($data['values']));
             foreach ($data['values'] as $value => $label) {
                 $localBuffer->writeInt($width);
                 $localBuffer->writeString($value, $width);

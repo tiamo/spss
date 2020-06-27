@@ -4,7 +4,7 @@ namespace SPSS\Sav;
 
 use SPSS\Buffer;
 
-Interface RecordInterface
+interface RecordInterface
 {
     /**
      * @var int Record type code
@@ -12,13 +12,11 @@ Interface RecordInterface
     const TYPE = 0;
 
     /**
-     * @param  Buffer  $buffer
      * @return void
      */
     public function read(Buffer $buffer);
 
     /**
-     * @param  Buffer  $buffer
      * @return void
      */
     public function write(Buffer $buffer);

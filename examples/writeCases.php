@@ -46,7 +46,6 @@ $writer = new \SPSS\Sav\Writer(array(
                 'attributes' => array(
                     '$@Role' => Variable::ROLE_PARTITION,
                 ),
-                'data' => array(1, 1, 1),
             ),
             array(
                 'name' => 'bbbb_bbbbbb12',
@@ -65,7 +64,6 @@ $writer = new \SPSS\Sav\Writer(array(
                 'attributes' => array(
                     '$@Role' => Variable::ROLE_SPLIT,
                 ),
-                'data' => array('foo', 'bar', 'baz'),
             ),
             array(
                 'name' => 'BBBB_BBBBBB13',
@@ -83,10 +81,20 @@ $writer = new \SPSS\Sav\Writer(array(
                 'attributes' => array(
                     '$@Role' => Variable::ROLE_INPUT,
                 ),
-                'data' => array(1, 1, 1),
             ),
         ),
     )
 );
 
+$data = array(
+    array(1, 'foo', 1),
+    array(1, 'bar', 1),
+    array(1, 'baz', 1),
+);
+
+foreach ($data as $case => $row) {
+    $writer->writeCase($row);
+}
+
 $writer->save($file);
+$writer->close();

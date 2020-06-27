@@ -1,5 +1,6 @@
-dist: trusty
 language: php
+
+sudo: false
 
 php:
 - 5.5
@@ -7,14 +8,14 @@ php:
 - 7.0
 - 7.1
 
-#before_install:
-#- if [[ ${TRAVIS_PHP_VERSION:0:3} == "5.5" ]]; then composer require --dev --no-update phpunit/phpunit ~4; fi
-
-install:
-- composer install --no-interaction --no-suggest
+env:
+  matrix:
+    - COMPOSER_FLAGS="--prefer-lowest"
+    - COMPOSER_FLAGS=""
 
 before_script:
-- phpenv config-rm xdebug.ini
+  - travis_retry composer self-update
+  - travis_retry composer update ${COMPOSER_FLAGS} --no-interaction --prefer-source
 
 script:
-- ./vendor/bin/phing all
+  - composer test

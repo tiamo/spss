@@ -12,11 +12,8 @@ class VariableAttributes extends Info
     /**
      * @var array
      */
-    public $data = [];
+    public $data = array();
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
@@ -24,7 +21,7 @@ class VariableAttributes extends Info
         foreach (explode('/', $data) as $item) {
             list($var, $value) = explode(':', $item);
             if (preg_match_all('#(.+)\((.+)\)#Uis', $value, $matches)) {
-                $this->data[$var] = [];
+                $this->data[$var] = array();
                 foreach ($matches[1] as $key => $val) {
                     $this->data[$var][$val] = trim(trim($matches[2][$key]), '\'');
                 }
@@ -34,14 +31,11 @@ class VariableAttributes extends Info
         }
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
-        $lines = [];
+        $lines = array();
         foreach ($this->data as $var => $value) {
-            if (is_array($value)) {
+            if (\is_array($value)) {
                 $_tmpString = '';
                 foreach ($value as $key => $val) {
                     $_tmpString .= sprintf("%s('%s'\n)", $key, $val);

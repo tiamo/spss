@@ -9,36 +9,34 @@ class MachineFloatingPointTest extends TestCase
 {
     public function provider()
     {
-        return [
-            [
-                [
+        return array(
+            array(
+                array(
                     'sysmis' => -1,
                     'highest' => 5,
                     'lowest' => -10,
-                ],
-                [
+                ),
+                array(
                     'sysmis' => -1,
                     'highest' => 5,
                     'lowest' => -10,
-                ],
-            ],
-            [
-                [],
+                ),
+            ),
+            array(
+                array(),
                 // -1.7976931348623E+308 php min double
                 //  1.7976931348623E+308 php max double
-                [
+                array(
                     'sysmis' => -1.7976931348623158E+308,
                     'highest' => 1.7976931348623158E+308,
                     'lowest' => -1.7976931348623158E+308,
-                ],
-            ],
-        ];
+                ),
+            ),
+        );
     }
 
     /**
      * @dataProvider provider
-     * @param array $attributes
-     * @param array $expected
      */
     public function testWriteRead(array $attributes, array $expected)
     {
@@ -46,7 +44,7 @@ class MachineFloatingPointTest extends TestCase
         foreach ($attributes as $key => $value) {
             $subject->{$key} = $value;
         }
-        $buffer = Buffer::factory('', ['memory' => true]);
+        $buffer = Buffer::factory('', array('memory' => true));
         $this->assertEquals(0, $buffer->position());
         $subject->write($buffer);
         $buffer->rewind();

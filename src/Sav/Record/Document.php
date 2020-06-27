@@ -13,26 +13,20 @@ class Document extends Record implements \ArrayAccess
     /**
      * @var array
      */
-    protected $lines = [];
+    protected $lines = array();
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         $count = $buffer->readInt();
-        for ($i = 0; $i < $count; $i++) {
+        for ($i = 0; $i < $count; ++$i) {
             $this->lines[] = trim($buffer->readString(self::LENGTH));
         }
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
         $buffer->writeInt(self::TYPE);
-        $buffer->writeInt(count($this->lines));
+        $buffer->writeInt(\count($this->lines));
         foreach ($this->lines as $line) {
             $buffer->writeString((string) $line, self::LENGTH);
         }
@@ -58,6 +52,7 @@ class Document extends Record implements \ArrayAccess
 
     /**
      * @param  mixed  $offset
+     *
      * @return bool
      */
     public function offsetExists($offset)
@@ -67,6 +62,7 @@ class Document extends Record implements \ArrayAccess
 
     /**
      * @param  mixed  $offset
+     *
      * @return mixed
      */
     public function offsetGet($offset)

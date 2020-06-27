@@ -10,9 +10,6 @@ class VeryLongString extends Info
     const SUBTYPE = 14;
     const DELIMITER = "\t";
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
@@ -23,17 +20,15 @@ class VeryLongString extends Info
         }
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
         if ($this->data) {
-            $data = '';
+            $data = array();
             foreach ($this->data as $key => $value) {
-                $data .= sprintf('%s=%05d%c', $key, $value, 0).self::DELIMITER;
+                $data[] = sprintf('%s=%05d%c', $key, $value, 0);
             }
-            $this->dataCount = strlen($data);
+            $data = implode(self::DELIMITER, $data);
+            $this->dataCount = \strlen($data);
             parent::write($buffer);
             $buffer->writeString($data);
         }

@@ -11,68 +11,64 @@ class SavRandomReadWriteTest extends TestCase
 {
     public function provider()
     {
-        $header = [
+        $header = array(
             'recType' => Record\Header::NORMAL_REC_TYPE,
             'prodName' => '@(#) SPSS DATA FILE',
             'layoutCode' => 2,
             'nominalCaseSize' => 0,
-            'casesCount' => 1, // mt_rand(10, 100),
+            'casesCount' => mt_rand(10, 100),
             'compression' => 1,
             'weightIndex' => 0,
             'bias' => 100,
             'creationDate' => date('d M y'),
             'creationTime' => date('H:i:s'),
             'fileLabel' => 'test read/write',
-        ];
+        );
 
-        $documents = [
+        $documents = array(
             $this->generateRandomString(mt_rand(5, Record\Document::LENGTH)),
             $this->generateRandomString(mt_rand(5, Record\Document::LENGTH)),
-        ];
+        );
 
-        $variables = [];
+        $variables = array();
 
         // Generate random variables
 
         $count = 1; // mt_rand(1, 20);
-        for ($i = 0; $i < $count; $i++) {
-            $var = $this->generateVariable([
+        for ($i = 0; $i < $count; ++$i) {
+            $var = $this->generateVariable(array(
                     'id' => $this->generateRandomString(mt_rand(2, 100)),
                     'casesCount' => $header['casesCount'],
-                ]
+                )
             );
             $header['nominalCaseSize'] += Utils::widthToOcts($var['width']);
             $variables[] = $var;
         }
 
-        yield [compact('header', 'variables', 'documents')];
+        yield array(compact('header', 'variables', 'documents'));
 
-        // $header['casesCount'] = 5;
-        // for ($i = 0; $i < 1000; $i++) {
-        //     $variable = $this->generateVariable([
-        //         'id' => $this->generateRandomString(mt_rand(2, 100)),
-        //         'casesCount' => $header['casesCount'],
-        //     ]);
-        //     $header['nominalCaseSize'] = Utils::widthToOcts($variable['width']);
-        //     yield [
-        //         [
-        //             'header' => $header,
-        //             'variables' => [$variable],
-        //             'documents' => $documents,
-        //         ],
-        //     ];
-        // }
-
-        // return [
-        //     [
-        //         compact('header', 'variables', 'documents'),
-        //     ],
-        // ];
+        $header['casesCount'] = 5;
+        for ($i = 0; $i < 100; ++$i) {
+            $variable = $this->generateVariable(array(
+                'id' => $this->generateRandomString(mt_rand(2, 100)),
+                'casesCount' => $header['casesCount'],
+            ));
+            $header['nominalCaseSize'] = Utils::widthToOcts($variable['width']);
+            yield array(
+                array(
+                    'header' => $header,
+                    'variables' => array($variable),
+                    'documents' => $documents,
+                ),
+            );
+        }
     }
 
     /**
      * @dataProvider provider
+     *
      * @param  array  $data
+     *
      * @throws \Exception
      */
     public function testWriteRead($data)
@@ -95,7 +91,7 @@ class SavRandomReadWriteTest extends TestCase
         if (isset($reader->info[Record\Info\VeryLongString::SUBTYPE])) {
             $veryLongStrings = $reader->info[Record\Info\VeryLongString::SUBTYPE]->toArray();
         } else {
-            $veryLongStrings = [];
+            $veryLongStrings = array();
         }
 
         $index = 0;
@@ -109,6 +105,7 @@ class SavRandomReadWriteTest extends TestCase
             $this->assertEquals($var['decimals'], $readVariable->print[3]);
 
             // Check variable data
+
             foreach ($var['data'] as $case => $value) {
                 $this->assertEquals($value, $reader->data[$case][$index]);
             }
@@ -120,5 +117,4 @@ class SavRandomReadWriteTest extends TestCase
         // TODO: valueLabels
         // TODO: info
     }
-
 }

@@ -16,12 +16,12 @@ class Writer
     /**
      * @var Record\Variable[]
      */
-    public $variables = [];
+    public $variables = array();
 
     /**
      * @var Record\ValueLabel[]
      */
-    public $valueLabels = [];
+    public $valueLabels = array();
 
     /**
      * @var Record\Document
@@ -31,7 +31,7 @@ class Writer
     /**
      * @var Record\Info[]
      */
-    public $info = [];
+    public $info = array();
 
     /**
      * @var Record\Data
@@ -47,20 +47,22 @@ class Writer
      * Writer constructor.
      *
      * @param  array  $data
+     *
      * @throws \Exception
      */
-    public function __construct($data = [])
+    public function __construct($data = array())
     {
         $this->buffer = Buffer::factory();
         $this->buffer->context = $this;
 
-        if (! empty($data)) {
+        if (!empty($data)) {
             $this->write($data);
         }
     }
 
     /**
      * @param  array  $data
+     *
      * @throws \Exception
      */
     public function write($data)
@@ -89,6 +91,7 @@ class Writer
         $this->info[Record\Info\VariableAttributes::SUBTYPE] = new Record\Info\VariableAttributes();
         $this->info[Record\Info\LongStringValueLabels::SUBTYPE] = new Record\Info\LongStringValueLabels();
         $this->info[Record\Info\LongStringMissingValues::SUBTYPE] = new Record\Info\LongStringMissingValues();
+        $this->info[Record\Info\CharacterEncoding::SUBTYPE] = new Record\Info\CharacterEncoding('UTF-8');
 
         $this->data = new Record\Data();
 
@@ -97,49 +100,46 @@ class Writer
         /** @var Variable $var */
         // for ($idx = 0; $idx <= $variablesCount; $idx++) {
         foreach (array_values($data['variables']) as $idx => $var) {
-
-            if (is_array($var)) {
+            if (\is_array($var)) {
                 $var = new Variable($var);
             }
 
-            if (! preg_match('/^[A-Za-z0-9_]+$/', $var->name)) {
-                throw new \InvalidArgumentException(
-                    sprintf('Variable name `%s` contains an illegal character.', $var->name)
-                );
+            //if (! preg_match('/^[A-Za-z0-9_]+$/', $var->name)) {
+            // UTF-8 and '.' characters could pass here
+            if (!preg_match('/^[A-Za-z0-9_\.\x{4e00}-\x{9fa5}]+$/u', $var->name)) {
+                throw new \InvalidArgumentException(sprintf('Variable name `%s` contains an illegal character.', $var->name));
             }
 
             if (empty($var->width)) {
-                throw new \InvalidArgumentException(
-                    sprintf('Invalid field width. Should be an integer number greater than zero.')
-                );
+                throw new \InvalidArgumentException(sprintf('Invalid field width. Should be an integer number greater than zero.'));
             }
 
             $variable = new Record\Variable();
 
-            // TODO: refactory
-            $variable->name = 'V'.str_pad($idx + 1, 7, 0, STR_PAD_LEFT);
+            // TODO: refactory - keep 7 positions so we can add after that for 100 very long string segments
+            $variable->name = 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
             // $variable->name = strtoupper($var->name);
 
             // TODO: test
-            if ($var->format === Variable::FORMAT_TYPE_A) {
+            if (Variable::FORMAT_TYPE_A === $var->format) {
                 $variable->width = $var->width;
             } else {
                 $variable->width = 0;
             }
 
             $variable->label = $var->label;
-            $variable->print = [
+            $variable->print = array(
                 0,
                 $var->format,
                 $var->width ? min($var->width, 255) : 8,
                 $var->decimals,
-            ];
-            $variable->write = [
+            );
+            $variable->write = array(
                 0,
                 $var->format,
                 $var->width ? min($var->width, 255) : 8,
                 $var->decimals,
-            ];
+            );
 
             // TODO: refactory
             $shortName = $variable->name;
@@ -151,9 +151,9 @@ class Writer
 
             if ($var->missing) {
                 if ($var->width <= 8) {
-                    if (count($var->missing) >= 3) {
+                    if (\count($var->missing) >= 3) {
                         $variable->missingValuesFormat = 3;
-                    } elseif (count($var->missing) === 2) {
+                    } elseif (2 === \count($var->missing)) {
                         $variable->missingValuesFormat = -2;
                     } else {
                         $variable->missingValuesFormat = 1;
@@ -168,20 +168,20 @@ class Writer
 
             if ($var->values) {
                 if ($variable->width > 8) {
-                    $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName] = [
+                    $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName] = array(
                         'width' => $var->width,
                         'values' => $var->values,
-                    ];
+                    );
                 } else {
-                    $valueLabel = new Record\ValueLabel([
+                    $valueLabel = new Record\ValueLabel(array(
                         'variables' => $this->variables,
-                    ]);
+                    ));
                     foreach ($var->values as $key => $value) {
-                        $valueLabel->labels[] = [
+                        $valueLabel->labels[] = array(
                             'value' => $key,
                             'label' => $value,
-                        ];
-                        $valueLabel->indexes = [$nominalIdx + 1];
+                        );
+                        $valueLabel->indexes = array($nominalIdx + 1);
                     }
                     $this->valueLabels[] = $valueLabel;
                 }
@@ -194,16 +194,18 @@ class Writer
             }
 
             $segmentCount = Utils::widthToSegments($var->width);
-            for ($i = 0; $i < $segmentCount; $i++) {
-                $this->info[Record\Info\VariableDisplayParam::SUBTYPE][$idx] = [
+
+            for ($i = 0; $i < $segmentCount; ++$i) {
+                $this->info[Record\Info\VariableDisplayParam::SUBTYPE][] = array(
                     $var->getMeasure(),
                     $var->getColumns(),
                     $var->getAlignment(),
-                ];
+                );
             }
 
             // TODO: refactory
-            $dataCount = count($var->data);
+            $dataCount = \count($var->data);
+
             if ($dataCount > $this->header->casesCount) {
                 $this->header->casesCount = $dataCount;
             }
@@ -212,7 +214,7 @@ class Writer
                 $this->data->matrix[$case][$idx] = $value;
             }
 
-            $nominalIdx += Utils::widthToOcts($variable->width);
+            $nominalIdx += Utils::widthToOcts($var->width);
         }
 
         $this->header->nominalCaseSize = $nominalIdx;
@@ -231,10 +233,10 @@ class Writer
         }
 
         // write documents
-        if (! empty($data['documents'])) {
-            $this->document = new Record\Document([
+        if (!empty($data['documents'])) {
+            $this->document = new Record\Document(array(
                     'lines' => $data['documents'],
-                ]
+                )
             );
             $this->document->write($this->buffer);
         }
@@ -247,12 +249,43 @@ class Writer
     }
 
     /**
+     * @param $row
+     *
+     * @return void
+     */
+    public function writeCase($row)
+    {
+        if (!isset($this->data)) {
+            $this->data = new Record\Data();
+        }
+
+        // update the header info about number of cases
+        $this->header->increaseCasesCount($this->buffer);
+
+        // write data
+        $this->data->writeCase($this->buffer, $row);
+    }
+
+    /**
      * @param $file
+     *
      * @return false|int
      */
     public function save($file)
     {
         return $this->buffer->saveToFile($file);
+    }
+
+    /**
+     * @return bool
+     */
+    public function close()
+    {
+        if (isset($this->data)) {
+            $this->data->close();
+        }
+
+        return $this->buffer->close();
     }
 
     /**
@@ -267,12 +300,14 @@ class Writer
      * @param  string  $className
      * @param  array  $data
      * @param  string  $group
-     * @return array
+     *
      * @throws Exception
+     *
+     * @return array
      */
     private function prepareInfoRecord($className, $data, $group = 'info')
     {
-        if (! class_exists($className)) {
+        if (!class_exists($className)) {
             throw new Exception('Unknown class');
         }
         $key = lcfirst(substr($className, strrpos($className, '\\') + 1));
@@ -280,7 +315,7 @@ class Writer
         return new $className(
             isset($data[$group]) && isset($data[$group][$key]) ?
                 $data[$group][$key] :
-                []
+                array()
         );
     }
 }

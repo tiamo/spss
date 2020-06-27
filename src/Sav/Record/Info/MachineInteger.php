@@ -12,10 +12,10 @@ class MachineInteger extends Info
     /**
      * @var array [Major, Minor, Revision]
      */
-    public $version = [1, 0, 0];
+    public $version = array(1, 0, 0);
 
     /**
-     * @var int Machine code.
+     * @var int machine code
      */
     public $machineCode = 0;
 
@@ -55,22 +55,19 @@ class MachineInteger extends Info
     public $characterCode = 65001;
 
     /**
-     * @var int Always set to 4.
+     * @var int always set to 4
      */
     protected $dataSize = 4;
 
     /**
-     * @var int Always set to 8.
+     * @var int always set to 8
      */
     protected $dataCount = 8;
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
-        $this->version = [$buffer->readInt(), $buffer->readInt(), $buffer->readInt()];
+        $this->version = array($buffer->readInt(), $buffer->readInt(), $buffer->readInt());
         $this->machineCode = $buffer->readInt();
         $this->floatingPointRep = $buffer->readInt();
         $this->compressionCode = $buffer->readInt();
@@ -78,9 +75,6 @@ class MachineInteger extends Info
         $this->characterCode = $buffer->readInt();
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
         parent::write($buffer);

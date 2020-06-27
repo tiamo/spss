@@ -15,20 +15,25 @@ class CharacterEncoding extends Info
     public $value;
 
     /**
-     * @param  Buffer  $buffer
+     * Record constructor.
+     *
+     * @param array $data
+     * @param mixed $value
      */
+    public function __construct($value)
+    {
+        $this->value = $value;
+    }
+
     public function read(Buffer $buffer)
     {
         parent::read($buffer);
         $this->value = $buffer->readString($this->dataSize * $this->dataCount);
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function write(Buffer $buffer)
     {
-        $this->dataCount = strlen($this->value);
+        $this->dataCount = \strlen($this->value);
         parent::write($buffer);
         $buffer->writeString($this->value);
     }

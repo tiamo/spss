@@ -37,7 +37,7 @@ function __content($data)
 }
 
 foreach ($files as $file) {
-    $reader = \SPSS\Sav\Reader::fromFile($file)->read();
+    $reader = \SPSS\Sav\Reader::fromFile($file)->readMetaData();
 
     echo PHP_EOL;
 
@@ -58,8 +58,9 @@ foreach ($files as $file) {
     echo __title('Additional-info');
     echo __content($reader->info);
 
-    echo __title('Data');
-    echo __content($reader->data);
-
+    while ($reader->readCase()) {
+        echo __title('Case ' . $reader->getCaseNumber());
+        echo __content($reader->getCase());
+    }
     echo PHP_EOL;
 }

@@ -48,7 +48,6 @@ class Writer
      *
      * @param array $data
      *
-     * @throws \Exception
      */
     public function __construct($data = [])
     {
@@ -60,11 +59,6 @@ class Writer
         }
     }
 
-    /**
-     * @param array $data
-     *
-     * @throws \Exception
-     */
     public function write($data)
     {
         $this->header                  = new Record\Header($data['header']);

@@ -3,21 +3,25 @@
 namespace SPSS\Sav;
 
 use SPSS\Buffer;
+use SPSS\Sav\Record\Header;
+use SPSS\Sav\Record\Info;
+use SPSS\Sav\Record\Variable;
+use SPSS\Sav\Record\ValueLabel;
 
 class Reader
 {
     /**
-     * @var \SPSS\Sav\Record\Header
+     * @var Header
      */
     public $header;
 
     /**
-     * @var \SPSS\Sav\Record\Variable[]
+     * @var Variable[]
      */
     public $variables = [];
 
     /**
-     * @var \SPSS\Sav\Record\ValueLabel[]
+     * @var ValueLabel[]
      */
     public $valueLabels = [];
 
@@ -27,7 +31,7 @@ class Reader
     public $documents = [];
 
     /**
-     * @var \SPSS\Sav\Record\Info[]
+     * @var Info[]
      */
     public $info = [];
 
@@ -37,14 +41,14 @@ class Reader
     public $data = [];
 
     /**
-     * @var \SPSS\Buffer
+     * @var Buffer
      */
     protected $_buffer;
 
     /**
      * Reader constructor.
      *
-     * @param \SPSS\Buffer $buffer
+     * @param  Buffer  $buffer
      */
     private function __construct(Buffer $buffer)
     {
@@ -53,17 +57,17 @@ class Reader
     }
 
     /**
-     * @param string $file
-     * @return \SPSS\Sav\Reader
+     * @param  string  $file
+     * @return Reader
      */
     public static function fromFile($file)
     {
-        return new self(Buffer::factory(fopen($file, 'r')));
+        return new self(Buffer::factory(fopen($file, 'rb')));
     }
 
     /**
-     * @param string $str
-     * @return \SPSS\Sav\Reader
+     * @param  string  $str
+     * @return Reader
      */
     public static function fromString($str)
     {
@@ -119,7 +123,7 @@ class Reader
                     $this->documents = Record\Document::fill($this->_buffer)->toArray();
                     break;
             }
-        } while ($recType != Record\Data::TYPE);
+        } while ($recType !== Record\Data::TYPE);
 
         return $this;
     }

@@ -15,7 +15,7 @@ class CharacterEncoding extends Info
     public $value;
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -24,7 +24,7 @@ class CharacterEncoding extends Info
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

@@ -11,7 +11,7 @@ use SPSS\Utils;
  * The value label records documented in this section are used for numeric and short string variables only.
  * Long string variables may have value labels, but their value labels are recorded using a different record type
  *
- * @see \SPSS\Sav\Record\Info\LongStringValueLabels
+ * @see Info\LongStringValueLabels
  */
 class ValueLabel extends Record
 {
@@ -36,7 +36,7 @@ class ValueLabel extends Record
     protected $variables = [];
 
     /**
-     * @param array $variables
+     * @param  array  $variables
      */
     public function setVariables($variables)
     {
@@ -44,7 +44,7 @@ class ValueLabel extends Record
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      * @throws Exception
      */
     public function read(Buffer $buffer)
@@ -65,7 +65,7 @@ class ValueLabel extends Record
 
         // The value label variables record is always immediately followed after a value label record.
         $recType = $buffer->readInt();
-        if ($recType != 4) {
+        if ($recType !== 4) {
             throw new Exception(
                 sprintf('Error reading Variable Index record: bad record type [%s]. Expecting Record Type 4.', $recType)
             );
@@ -93,7 +93,7 @@ class ValueLabel extends Record
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

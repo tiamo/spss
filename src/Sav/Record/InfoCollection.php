@@ -30,7 +30,7 @@ class InfoCollection
     public $data = [];
 
     /**
-     * @param int $subtype
+     * @param  int  $subtype
      * @return string
      */
     protected static function getClassBySubtype($subtype)
@@ -45,13 +45,13 @@ class InfoCollection
     }
 
     /**
-     * @param \SPSS\Buffer $buffer
-     * @return array|\SPSS\Sav\Record
+     * @param  Buffer  $buffer
+     * @return array|Record
      */
     public function fill(Buffer $buffer)
     {
         $subtype = $buffer->readInt();
-        $this->data[$subtype] = call_user_func(self::getClassBySubtype($subtype) . '::fill', $buffer);
+        $this->data[$subtype] = call_user_func(self::getClassBySubtype($subtype).'::fill', $buffer);
 
         return $this->data;
     }

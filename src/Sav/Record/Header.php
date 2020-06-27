@@ -99,13 +99,13 @@ class Header extends Record
     public $fileLabel;
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      * @throws Exception
      */
     public function read(Buffer $buffer)
     {
         $this->recType = $buffer->readString(4);
-        if (! ($this->recType == self::NORMAL_REC_TYPE || $this->recType == self::ZLIB_REC_TYPE)) {
+        if (! ($this->recType === self::NORMAL_REC_TYPE || $this->recType === self::ZLIB_REC_TYPE)) {
             throw new Exception('Read header error: this is not a valid SPSS file. Does not start with $FL2 or $FL3.');
         }
         $this->prodName = trim($buffer->readString(60));
@@ -113,7 +113,7 @@ class Header extends Record
 
         // layoutCode should be 2 or 3.
         // If not swap bytes and check again which would then indicate big-endian
-        if ($this->layoutCode != 2 && $this->layoutCode != 3) {
+        if ($this->layoutCode !== 2 && $this->layoutCode !== 3) {
             // try to flip to big-endian mode and read again
             $buffer->isBigEndian = true;
             $buffer->skip(-4);
@@ -134,7 +134,7 @@ class Header extends Record
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

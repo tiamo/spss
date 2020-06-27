@@ -15,7 +15,7 @@ class Utils
      */
     public static function formatDate($timestamp, $format = 'Y M d')
     {
-        return date($format, strtotime('1582-10-04 00:00:00') + $timestamp);
+        return date($format, strtotime('1582-10-14 00:00:00') + $timestamp);
     }
 
     /**
@@ -151,7 +151,7 @@ class Utils
     {
         // assert($width >= 0);
 
-        if ($width == 0) {
+        if ($width === 0) {
             $bytes = 8;
         } elseif (! Variable::isVeryLong($width)) {
             $bytes = $width;
@@ -220,7 +220,7 @@ class Utils
     {
         assert($segment < self::widthToSegments($width));
 
-        return $width == 0 ? 8 : self::roundUp(self::segmentAllocWidth($width, $segment), 8);
+        return $width === 0 ? 8 : self::roundUp(self::segmentAllocWidth($width, $segment), 8);
     }
 
 }

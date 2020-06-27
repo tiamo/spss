@@ -2,6 +2,6 @@
 
 namespace SPSS;
 
-class Exception extends \Exception
+class Exception extends \RuntimeException
 {
 }

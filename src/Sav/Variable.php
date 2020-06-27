@@ -86,7 +86,7 @@ class Variable
     /**
      * Variable constructor.
      *
-     * @param array $data
+     * @param  array  $data
      */
     public function __construct($data = [])
     {
@@ -96,7 +96,7 @@ class Variable
     }
 
     /**
-     * @param int $format
+     * @param  int  $format
      * @return bool
      */
     public static function isNumberFormat($format)
@@ -104,7 +104,10 @@ class Variable
         return in_array($format, [
             self::FORMAT_TYPE_COMMA,
             self::FORMAT_TYPE_F,
-        ]);
+            self::FORMAT_TYPE_DATETIME,
+            self::FORMAT_TYPE_DATE,
+            self::FORMAT_TYPE_TIME
+        ], true);
     }
 
     /**
@@ -113,7 +116,7 @@ class Variable
      * (string <= 8 chars) and a meaning (long string).
      * Non-existent codes have a (null, null) tuple returned.
      *
-     * @param integer $format
+     * @param  integer  $format
      * @return array
      */
     public static function getFormatInfo($format)
@@ -197,7 +200,7 @@ class Variable
     }
 
     /**
-     * @param int $alignment
+     * @param  int  $alignment
      * @return string
      */
     public static function alignmentToString($alignment)

@@ -15,7 +15,7 @@ class VariableAttributes extends Info
     public $data = [];
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -35,7 +35,7 @@ class VariableAttributes extends Info
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

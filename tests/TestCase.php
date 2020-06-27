@@ -33,7 +33,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     protected function generateVariable($opts = [])
     {
         $opts = array_merge([
-            'id' => uniqid(),
+            'id' => uniqid('', true),
             'numeric' => mt_rand(0, 1),
             'casesCount' => 0,
         ], $opts
@@ -58,7 +58,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
             $var['format'] = Variable::FORMAT_TYPE_A;
 
             // TODO: test > 255
-            $var['width'] = mt_rand(2, 200);
+            $var['width'] = mt_rand(2, 500);
             $var['decimals'] = 0;
             for ($c = 0; $c < $opts['casesCount']; $c++) {
                 $var['data'][$c] = trim($this->generateRandomString(mt_rand(0, $var['width'])));
@@ -78,7 +78,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $charactersLength = strlen($characters);
         $randomString = '';
         for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, $charactersLength - 1)];
+            $randomString .= $characters[mt_rand(0, $charactersLength - 1)];
         }
 
         return trim($randomString);

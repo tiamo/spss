@@ -10,7 +10,7 @@ class LongStringMissingValues extends Info
     const SUBTYPE = 22;
 
     /**
-     * @param \SPSS\Buffer $buffer
+     * @param  Buffer  $buffer
      * @throws \SPSS\Exception
      */
     public function read(Buffer $buffer)
@@ -30,7 +30,7 @@ class LongStringMissingValues extends Info
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

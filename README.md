@@ -4,13 +4,15 @@ A PHP library for reading and writing SPSS / PSPP .sav data files.
 
 VERSION 2.1.0 ([CHANGELOG](CHANGELOG.md))
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/tiamo/spss.svg?style=flat-square)](https://packagist.org/packages/tiamo/spss)
 [![Build Status](https://travis-ci.org/tiamo/spss.svg?branch=master)](https://travis-ci.org/tiamo/spss)
+[![Total Downloads](https://img.shields.io/packagist/dt/tiamo/spss.svg?style=flat-square)](https://packagist.org/packages/tiamo/spss)
 
 ## Requirements
 
-* PHP 5.5.0 and up
-* mbstring extension
-* bcmath extension
++ php >= 5.5
++ mbstring extension
++ bcmath extension
 
 ## Installation
 

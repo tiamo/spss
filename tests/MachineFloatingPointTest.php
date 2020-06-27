@@ -55,7 +55,7 @@ class MachineFloatingPointTest extends TestCase
         $this->assertEquals(40, $buffer->position());
         foreach ($expected as $key => $value) {
             $expected = 0;
-            $actual = bcsub($value, $read->{$key});
+            $actual = @bcsub($value, $read->{$key});
             $msg = "Wrong value received for '$key', expected '$value', got '{$read->{$key}}'";
             $this->assertEquals($expected, $actual, $msg);
         }

@@ -9,7 +9,7 @@ abstract class Record implements RecordInterface
     /**
      * Record constructor.
      *
-     * @param array $data
+     * @param  array  $data
      */
     public function __construct($data = [])
     {
@@ -19,8 +19,8 @@ abstract class Record implements RecordInterface
     }
 
     /**
-     * @param Buffer $buffer
-     * @param array $data
+     * @param  Buffer  $buffer
+     * @param  array  $data
      * @return static
      */
     public static function fill(Buffer $buffer, $data = [])

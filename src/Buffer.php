@@ -61,8 +61,8 @@ class Buffer
         switch ($type) {
             case 'string':
                 $stream = isset($options['memory']) ?
-                    fopen('php://memory', 'r+') :
-                    fopen('php://temp', 'r+');
+                    fopen('php://memory', 'rb+') :
+                    fopen('php://temp', 'rb+');
                 if ($resource !== '') {
                     fwrite($stream, $resource);
                     fseek($stream, 0);
@@ -88,7 +88,7 @@ class Buffer
      */
     public function allocate($length, $skip = true)
     {
-        $stream = fopen('php://memory', 'r+');
+        $stream = fopen('php://memory', 'rb+');
         if (stream_copy_to_stream($this->_stream, $stream, $length)) {
             if ($skip) {
                 $this->skip($length);
@@ -181,7 +181,7 @@ class Buffer
     public function readBytes($length)
     {
         $bytes = $this->read($length);
-        if ($bytes != false) {
+        if ($bytes !== false) {
             return array_values(unpack('C*', $bytes));
         }
 
@@ -376,7 +376,7 @@ class Buffer
     private function readNumeric($length, $format)
     {
         $bytes = $this->read($length);
-        if ($bytes != false) {
+        if ($bytes !== false) {
             if ($this->isBigEndian) {
                 $bytes = strrev($bytes);
             }

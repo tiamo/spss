@@ -26,7 +26,7 @@ class Info extends Record implements \ArrayAccess
     protected $dataCount = 0;
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -35,7 +35,7 @@ class Info extends Record implements \ArrayAccess
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {
@@ -54,7 +54,7 @@ class Info extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
+     * @param  mixed  $offset
      * @return bool
      */
     public function offsetExists($offset)
@@ -63,7 +63,7 @@ class Info extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
+     * @param  mixed  $offset
      * @return mixed
      */
     public function offsetGet($offset)
@@ -72,8 +72,8 @@ class Info extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
-     * @param mixed $value
+     * @param  mixed  $offset
+     * @param  mixed  $value
      */
     public function offsetSet($offset, $value)
     {
@@ -81,7 +81,7 @@ class Info extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
+     * @param  mixed  $offset
      */
     public function offsetUnset($offset)
     {

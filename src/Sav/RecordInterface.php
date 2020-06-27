@@ -12,13 +12,13 @@ Interface RecordInterface
     const TYPE = 0;
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      * @return void
      */
     public function read(Buffer $buffer);
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      * @return void
      */
     public function write(Buffer $buffer);

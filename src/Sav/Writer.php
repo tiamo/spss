@@ -46,7 +46,7 @@ class Writer
     /**
      * Writer constructor.
      *
-     * @param array $data
+     * @param  array  $data
      * @throws \Exception
      */
     public function __construct($data = [])
@@ -60,7 +60,7 @@ class Writer
     }
 
     /**
-     * @param array $data
+     * @param  array  $data
      * @throws \Exception
      */
     public function write($data)
@@ -117,11 +117,11 @@ class Writer
             $variable = new Record\Variable();
 
             // TODO: refactory
-            $variable->name = 'V' . str_pad($idx + 1, 7, 0, STR_PAD_LEFT);
+            $variable->name = 'V'.str_pad($idx + 1, 7, 0, STR_PAD_LEFT);
             // $variable->name = strtoupper($var->name);
 
             // TODO: test
-            if ($var->format == Variable::FORMAT_TYPE_A) {
+            if ($var->format === Variable::FORMAT_TYPE_A) {
                 $variable->width = $var->width;
             } else {
                 $variable->width = 0;
@@ -153,7 +153,7 @@ class Writer
                 if ($var->width <= 8) {
                     if (count($var->missing) >= 3) {
                         $variable->missingValuesFormat = 3;
-                    } elseif (count($var->missing) == 2) {
+                    } elseif (count($var->missing) === 2) {
                         $variable->missingValuesFormat = -2;
                     } else {
                         $variable->missingValuesFormat = 1;
@@ -212,7 +212,7 @@ class Writer
                 $this->data->matrix[$case][$idx] = $value;
             }
 
-            $nominalIdx += Utils::widthToOcts($var->width);
+            $nominalIdx += Utils::widthToOcts($variable->width);
         }
 
         $this->header->nominalCaseSize = $nominalIdx;
@@ -256,7 +256,7 @@ class Writer
     }
 
     /**
-     * @return \SPSS\Buffer
+     * @return Buffer
      */
     public function getBuffer()
     {
@@ -264,9 +264,9 @@ class Writer
     }
 
     /**
-     * @param string $className
-     * @param array $data
-     * @param string $group
+     * @param  string  $className
+     * @param  array  $data
+     * @param  string  $group
      * @return array
      * @throws Exception
      */

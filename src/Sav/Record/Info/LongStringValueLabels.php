@@ -15,7 +15,7 @@ class LongStringValueLabels extends Info
     public $data = [];
 
     /**
-     * @param \SPSS\Buffer $buffer
+     * @param  Buffer  $buffer
      * @throws \SPSS\Exception
      */
     public function read(Buffer $buffer)
@@ -41,7 +41,7 @@ class LongStringValueLabels extends Info
     }
 
     /**
-     * @param \SPSS\Buffer $buffer
+     * @param  \SPSS\Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

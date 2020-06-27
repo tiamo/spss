@@ -93,7 +93,7 @@ class Variable extends Record
     /**
      * Returns true if WIDTH is a very long string width, false otherwise.
      *
-     * @param int $width
+     * @param  int  $width
      * @return int
      */
     public static function isVeryLong($width)
@@ -102,7 +102,7 @@ class Variable extends Record
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -116,15 +116,15 @@ class Variable extends Record
             $labelLength = $buffer->readInt();
             $this->label = $buffer->readString($labelLength, 4);
         }
-        if ($this->missingValuesFormat != 0) {
-            for ($i = 0; $i < abs($this->missingValuesFormat); $i++) {
+        if ($this->missingValuesFormat !== 0) {
+            for ($i = 0, $iMax = abs($this->missingValuesFormat); $i < $iMax; $i++) {
                 $this->missingValues[] = $buffer->readDouble();
             }
         }
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {
@@ -148,7 +148,7 @@ class Variable extends Record
         // TODO: test
         if ($this->missingValuesFormat) {
             foreach ($this->missingValues as $val) {
-                if ($this->width == 0) {
+                if ($this->width === 0) {
                     $buffer->writeDouble($val);
                 } else {
                     $buffer->writeString($val, 8);
@@ -179,8 +179,8 @@ class Variable extends Record
     }
 
     /**
-     * @param Buffer $buffer
-     * @param int $width
+     * @param  Buffer  $buffer
+     * @param  int  $width
      */
     public function writeBlank(Buffer $buffer, $width)
     {
@@ -198,7 +198,7 @@ class Variable extends Record
     }
 
     /**
-     * @param int $seg
+     * @param  int  $seg
      * @return string
      */
     public function getSegmentName($seg = 0)
@@ -206,7 +206,7 @@ class Variable extends Record
         // TODO: refactory
         $name = $this->name;
         $name = mb_substr($name, 0, 8);
-        $name = mb_substr($name, 0, -mb_strlen($seg)) . $seg;
+        $name = mb_substr($name, 0, -mb_strlen($seg)).$seg;
 
         return mb_strtoupper($name);
     }

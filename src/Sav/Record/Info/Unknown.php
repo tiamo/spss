@@ -8,7 +8,7 @@ use SPSS\Sav\Record\Info;
 class Unknown extends Info
 {
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -17,7 +17,7 @@ class Unknown extends Info
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

@@ -16,7 +16,7 @@ class LongVariableNames extends Info
     public $data = [];
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -30,13 +30,13 @@ class LongVariableNames extends Info
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {
         $data = '';
         foreach ($this->data as $key => $value) {
-            $data .= sprintf('%s=%s', $key, $value) . self::DELIMITER;
+            $data .= sprintf('%s=%s', $key, $value).self::DELIMITER;
         }
         $this->dataCount = strlen($data);
         parent::write($buffer);

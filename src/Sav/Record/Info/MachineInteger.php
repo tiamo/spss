@@ -65,7 +65,7 @@ class MachineInteger extends Info
     protected $dataCount = 8;
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -79,7 +79,7 @@ class MachineInteger extends Info
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

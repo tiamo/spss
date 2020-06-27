@@ -16,7 +16,7 @@ class Document extends Record implements \ArrayAccess
     protected $lines = [];
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -27,7 +27,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {
@@ -47,7 +47,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param array $lines
+     * @param  array  $lines
      */
     public function append($lines)
     {
@@ -57,7 +57,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
+     * @param  mixed  $offset
      * @return bool
      */
     public function offsetExists($offset)
@@ -66,7 +66,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
+     * @param  mixed  $offset
      * @return mixed
      */
     public function offsetGet($offset)
@@ -75,8 +75,8 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
-     * @param mixed $value
+     * @param  mixed  $offset
+     * @param  mixed  $value
      */
     public function offsetSet($offset, $value)
     {
@@ -84,7 +84,7 @@ class Document extends Record implements \ArrayAccess
     }
 
     /**
-     * @param mixed $offset
+     * @param  mixed  $offset
      */
     public function offsetUnset($offset)
     {

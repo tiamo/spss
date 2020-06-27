@@ -40,7 +40,7 @@ class MachineFloatingPoint extends Info
     protected $dataCount = 3;
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function read(Buffer $buffer)
     {
@@ -51,7 +51,7 @@ class MachineFloatingPoint extends Info
     }
 
     /**
-     * @param Buffer $buffer
+     * @param  Buffer  $buffer
      */
     public function write(Buffer $buffer)
     {

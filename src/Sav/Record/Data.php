@@ -65,7 +65,7 @@ class Data extends Record
     public function readCase(Buffer $buffer, $case)
     {
         /* check if this is the first time */
-        if (-1 === $this->startData) {
+        if ($this->startData === -1) {
             $this->opcodeIndex = 8;
             $this->opcodes     = [];
 
@@ -117,9 +117,6 @@ class Data extends Record
         }
     }
 
-    /**
-     * @param  Buffer  $buffer
-     */
     public function read(Buffer $buffer)
     {
         if ($this->startData === -1) {
@@ -177,9 +174,6 @@ class Data extends Record
         }
     }
 
-    /**
-     * @param array $row
-     */
     public function writeCase(Buffer $buffer, $row)
     {
         if (!isset($buffer->context->variables)) {
@@ -380,9 +374,9 @@ class Data extends Record
         $varNum   = 0;
 
         for ($index = 0; $index < $varCount; $index++) {
-            $var       = $variables[$index];
+            $var = $variables[$index];
             $isNumeric = 0 === $var->width && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
-            $width     = isset($var->write[2]) ? $var->write[2] : $var->width;
+            $width = isset($var->write[2]) ? $var->write[2] : $var->width;
 
             // var_dump($var);
             // exit;
@@ -410,10 +404,10 @@ class Data extends Record
                     }
                 }
             } else {
-                $width           = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
                 $result[$varNum] = '';
-                $segmentsCount   = Utils::widthToSegments($width);
-                $opcode          = self::OPCODE_RAW_DATA;
+                $segmentsCount = Utils::widthToSegments($width);
+                $opcode = self::OPCODE_RAW_DATA;
                 for ($s = 0; $s < $segmentsCount; $s++) {
                     $segWidth = Utils::segmentAllocWidth($width, $s);
                     if (self::OPCODE_NOP === $opcode || self::OPCODE_EOF === $opcode) {
@@ -421,8 +415,6 @@ class Data extends Record
                         continue;
                     }
                     for ($i = $segWidth; $i > 0; $i -= 8) {
-                        $chunkSize = ($segWidth = 255) !== 0 ? min($i, 8) : 8;
-
                         $val = '';
                         if (!$compressed) {
                             $val = $buffer->readString(8);
@@ -462,6 +454,7 @@ class Data extends Record
      * @param  array  $veryLongStrings
      * @param  int  $sysmis
      *
+     * @return void
      */
     protected function writeCaseData(Buffer $buffer, $row, $compressed, $bias, $variables, $veryLongStrings, $sysmis)
     {
@@ -470,7 +463,7 @@ class Data extends Record
 
             // $isNumeric = $var->width == 0;
             $isNumeric = 0 === $var->width && \SPSS\Sav\Variable::isNumberFormat($var->write[1]);
-            $width     = isset($var->write[2]) ? $var->write[2] : $var->width;
+            $width = isset($var->write[2]) ? $var->write[2] : $var->width;
 
             if ($isNumeric) {
                 if (!$compressed) {
@@ -483,21 +476,23 @@ class Data extends Record
                     $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
                     $this->dataBuffer->writeDouble($value);
                 }
-            } elseif (!$compressed) {
-                $buffer->writeString($value, Utils::roundUp($width, 8));
             } else {
-                $offset        = 0;
-                $width         = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
+                $offset = 0;
+                $width = isset($veryLongStrings[$var->name]) ? $veryLongStrings[$var->name] : $width;
                 $segmentsCount = Utils::widthToSegments($width);
                 for ($s = 0; $s < $segmentsCount; $s++) {
                     $segWidth = Utils::segmentAllocWidth($width, $s);
                     for ($i = $segWidth; $i > 0; $i -= 8) {
-                        $chunkSize = ($segWidth = 255) !== 0 ? min($i, 8) : 8;
-                        $val       = substr($value, $offset, $chunkSize); // Read 8 byte segements, don't use mbsubstr here
-                        if ('' === $val) {
-                            $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
+                        $chunkSize = $segWidth === 255 ? min($i, 8) : 8;
+                        $val = substr($value, $offset, $chunkSize); // Read 8 byte segments, don't use mbsubstr here
+                        if ($compressed) {
+                            if ('' === $val) {
+                                $this->writeOpcode($buffer, self::OPCODE_WHITESPACES);
+                            } else {
+                                $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
+                                $this->dataBuffer->writeString($val, 8);
+                            }
                         } else {
-                            $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
                             $this->dataBuffer->writeString($val, 8);
                         }
                         $offset += $chunkSize;

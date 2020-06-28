@@ -2,10 +2,12 @@
 
 ## 2.2.0
 
-2020-06-27
+2020-06
 
-+ Full code refactory
-+ Fixed tests
++ Fixed bugs
++ Improved tests
++ Code refactored
++ Added linters
 
 ## 2.1.*
 

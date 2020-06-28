@@ -47,7 +47,7 @@ class LongStringValueLabels extends Info
             $localBuffer->writeInt(mb_strlen($varName));
             $localBuffer->writeString($varName);
             $localBuffer->writeInt($width);
-            $localBuffer->writeInt(is_countable($data['values']) ? \count($data['values']) : 0);
+            $localBuffer->writeInt(\is_countable($data['values']) ? \count($data['values']) : 0);
             foreach ($data['values'] as $value => $label) {
                 $localBuffer->writeInt($width);
                 $localBuffer->writeString($value, $width);

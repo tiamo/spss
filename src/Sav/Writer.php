@@ -191,7 +191,7 @@ class Writer
             }
 
             // TODO: refactory
-            $dataCount = is_countable($var->data) ? \count($var->data) : 0;
+            $dataCount = \count($var->data);
 
             if ($dataCount > $this->header->casesCount) {
                 $this->header->casesCount = $dataCount;

@@ -110,11 +110,12 @@ class WriteMultibyteTest extends TestCase
         $writer = new Writer($input);
 
         // Uncomment if you want to really save and check the resulting file in SPSS
-        //$writer->save('chinese1.sav');
+        // $writer->save('chinese1.sav');
+
         $buffer = $writer->getBuffer();
         $buffer->rewind();
 
-        $reader         = Reader::fromString($buffer->getStream())->read();
+        $reader = Reader::fromString($buffer->getStream())->read();
         $expected[0][0] = $input['variables'][0]['data'][0];
         $expected[0][1] = $input['variables'][1]['data'][0];
         $expected[1][0] = $input['variables'][0]['data'][1];

@@ -12,7 +12,7 @@ class Utils
      * @param $timestamp
      * @param string $format
      *
-     * @return false|int
+     * @return false|string
      */
     public static function formatDate($timestamp, $format = 'Y M d')
     {
@@ -47,6 +47,8 @@ class Utils
 
     /**
      * Convert bytes to string.
+     *
+     * @param  array  $bytes
      *
      * @return string
      */
@@ -87,7 +89,8 @@ class Utils
     }
 
     /**
-     * @param bool $unsigned
+     * @param  array  $bytes
+     * @param  bool  $unsigned
      *
      * @return int
      */
@@ -103,7 +106,7 @@ class Utils
     }
 
     /**
-     * @param $int
+     * @param int $int
      * @param int $size
      *
      * @return array
@@ -169,18 +172,6 @@ class Utils
         }
 
         return self::roundUp($bytes, 8);
-    }
-
-    /**
-     * Returns the number of 8-byte units (octs) used to write data for a variable of the given WIDTH.
-     *
-     * @param int $width
-     *
-     * @return int
-     */
-    public static function widthToOctsOld($width)
-    {
-        return self::widthToBytes($width) / 8;
     }
 
     /**

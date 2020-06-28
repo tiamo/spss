@@ -53,8 +53,6 @@ class TestCase extends \PHPUnit\Framework\TestCase
             }
         } else {
             $var['format'] = Variable::FORMAT_TYPE_A;
-
-            // TODO: test > 255
             $var['width']    = mt_rand(2, 2000);
             $var['decimals'] = 0;
             for ($c = 0; $c < $opts['casesCount']; $c++) {

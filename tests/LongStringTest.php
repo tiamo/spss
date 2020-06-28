@@ -10,22 +10,22 @@ class LongStringTest extends TestCase
 {
     public function testLongString()
     {
-        $firstLong  = str_repeat('1234567890', 30);
+        $firstLong = str_repeat('1234567890', 30);
         $secondLong = str_repeat('abcdefghij', 30);
 
         $data = [
             'header' => [
-                'prodName'     => '@(#) IBM SPSS STATISTICS',
-                'layoutCode'   => 2,
+                'prodName' => '@(#) IBM SPSS STATISTICS',
+                'layoutCode' => 2,
                 'creationDate' => '08 May 19',
                 'creationTime' => '12:22:16',
             ],
             'variables' => [
                 [
-                    'name'       => 'long',
-                    'label'      => 'long label',
-                    'width'      => 300,
-                    'format'     => Variable::FORMAT_TYPE_A,
+                    'name' => 'long',
+                    'label' => 'long label',
+                    'width' => 300,
+                    'format' => Variable::FORMAT_TYPE_A,
                     'attributes' => [
                         '$@Role' => Variable::ROLE_INPUT,
                     ],
@@ -35,10 +35,10 @@ class LongStringTest extends TestCase
                     ],
                 ],
                 [
-                    'name'       => 'short',
-                    'label'      => 'short label',
-                    'format'     => Variable::FORMAT_TYPE_A,
-                    'width'      => 8,
+                    'name' => 'short',
+                    'label' => 'short label',
+                    'format' => Variable::FORMAT_TYPE_A,
+                    'width' => 8,
                     'attributes' => [
                         '$@Role' => Variable::ROLE_INPUT,
                     ],
@@ -50,7 +50,6 @@ class LongStringTest extends TestCase
             ],
         ];
 
-        /** @noinspection PhpUnhandledExceptionInspection */
         $writer = new Writer($data);
 
         // Uncomment if you want to really save and check the resulting file in SPSS
@@ -61,7 +60,7 @@ class LongStringTest extends TestCase
 
         $reader = Reader::fromString($buffer->getStream())->read();
 
-        $expected       = [];
+        $expected = [];
         $expected[0][0] = $data['variables'][0]['data'][0];
         $expected[0][1] = $data['variables'][1]['data'][0];
         $expected[1][0] = $data['variables'][0]['data'][1];

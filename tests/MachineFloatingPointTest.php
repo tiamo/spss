@@ -37,6 +37,8 @@ class MachineFloatingPointTest extends TestCase
 
     /**
      * @dataProvider provider
+     * @param  array  $attributes
+     * @param  array  $expected
      */
     public function testWriteRead(array $attributes, array $expected)
     {

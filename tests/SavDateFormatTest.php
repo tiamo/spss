@@ -335,8 +335,6 @@ class SavDateFormatTest extends TestCase
      * @dataProvider dataProvider
      *
      * @param array $data
-     *
-     * @throws \Throwable
      */
     public function testWriteRead($data)
     {

@@ -68,8 +68,6 @@ class SavRandomReadWriteTest extends TestCase
      * @dataProvider provider
      *
      * @param array $data
-     *
-     * @throws \Exception
      */
     public function testWriteRead($data)
     {

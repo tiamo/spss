@@ -6,7 +6,6 @@ use SPSS\Buffer;
 use SPSS\Sav\Record\Header;
 use SPSS\Sav\Record\Info;
 use SPSS\Sav\Record\ValueLabel;
-use SPSS\Sav\Record\Variable;
 use SPSS\Utils;
 
 class Reader
@@ -17,7 +16,7 @@ class Reader
     public $header;
 
     /**
-     * @var Variable[]
+     * @var Record\Variable[]
      */
     public $variables = [];
 

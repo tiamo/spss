@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.1
+
+2020-12
+
+* Fix date writer ([#55](https://github.com/tiamo/spss/pull/55))
+
 ## 2.2.0
 
 2020-06

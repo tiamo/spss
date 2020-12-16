@@ -18,7 +18,7 @@ class SavDateFormatTest extends TestCase
             'recType'         => Record\Header::NORMAL_REC_TYPE,
             'prodName'        => '@(#) SPSS DATA FILE',
             'layoutCode'      => 2,
-            'nominalCaseSize' => 47,
+            'nominalCaseSize' => 38,
             'casesCount'      => 3,
             'compression'     => 1,
             'weightIndex'     => 0,

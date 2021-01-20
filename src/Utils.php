@@ -257,4 +257,17 @@ class Utils
 
         return 0 === $width ? 8 : self::roundUp(self::segmentAllocWidth($width, $segment), 8);
     }
+
+    /**
+     * @param mixed $values
+     */
+    public static function is_countable($values)
+    {
+        # is_countable (PHP 7 >= 7.3.0, PHP 8)
+        if (version_compare(PHP_VERSION, "7.3") < 0) {
+            return (is_array($values) || is_object($values) || is_iterable($values) || $values instanceof Countable);
+        } else {
+            return \is_countable($values);
+        }
+    }
 }

@@ -4,6 +4,7 @@ namespace SPSS\Sav\Record\Info;
 
 use SPSS\Buffer;
 use SPSS\Sav\Record\Info;
+use SPSS\Utils;
 
 class LongStringMissingValues extends Info
 {
@@ -32,7 +33,7 @@ class LongStringMissingValues extends Info
             foreach ($this->data as $varName => $values) {
                 $localBuffer->writeInt(mb_strlen($varName));
                 $localBuffer->writeString($varName);
-                $localBuffer->write(\chr(\is_countable($values) ? \count($values) : 0), 1);
+                $localBuffer->write(\chr(Utils::is_countable($values) ? \count($values) : 0), 1);
                 $localBuffer->writeInt(8);
                 foreach ($values as $value) {
                     $localBuffer->writeString($value, 8);

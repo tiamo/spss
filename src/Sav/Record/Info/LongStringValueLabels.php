@@ -4,6 +4,7 @@ namespace SPSS\Sav\Record\Info;
 
 use SPSS\Buffer;
 use SPSS\Sav\Record\Info;
+use SPSS\Utils;
 
 class LongStringValueLabels extends Info
 {
@@ -47,7 +48,7 @@ class LongStringValueLabels extends Info
             $localBuffer->writeInt(mb_strlen($varName));
             $localBuffer->writeString($varName);
             $localBuffer->writeInt($width);
-            $localBuffer->writeInt(\is_countable($data['values']) ? \count($data['values']) : 0);
+            $localBuffer->writeInt(Utils::is_countable($data['values']) ? \count($data['values']) : 0);
             foreach ($data['values'] as $value => $label) {
                 $localBuffer->writeInt($width);
                 $localBuffer->writeString($value, $width);

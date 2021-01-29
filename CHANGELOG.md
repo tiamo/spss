@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.2
+
+2021-01
+
+* Compatibility: is_countable (PHP 7 >= 7.3.0, PHP 8) ([#58](https://github.com/tiamo/spss/pull/58))
+
 ## 2.2.1
 
 2020-12

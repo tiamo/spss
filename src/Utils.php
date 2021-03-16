@@ -265,7 +265,7 @@ class Utils
     {
         # is_countable (PHP 7 >= 7.3.0, PHP 8)
         if (version_compare(PHP_VERSION, "7.3") < 0) {
-            return (is_array($values) || is_object($values) || is_iterable($values) || $values instanceof Countable);
+            return (is_array($values) || is_object($values) || is_iterable($values) || ($values instanceof \Countable));
         } else {
             return \is_countable($values);
         }

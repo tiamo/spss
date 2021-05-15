@@ -118,13 +118,13 @@ class Writer
             $variable->print = [
                 0,
                 $var->format,
-                $var->width !== [] ? min($var->width, 255) : 8,
+                $var->width > 0 ? min($var->width, 255) : 8,
                 $var->decimals,
             ];
             $variable->write = [
                 0,
                 $var->format,
-                $var->width !== [] ? min($var->width, 255) : 8,
+                $var->width > 0 ? min($var->width, 255) : 8,
                 $var->decimals,
             ];
 

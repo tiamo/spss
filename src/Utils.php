@@ -163,7 +163,7 @@ class Utils
 
         if (0 === $width) {
             $bytes = 8;
-        } elseif (Variable::isVeryLong($width) === 0) {
+        } elseif (Variable::isVeryLong($width) === false) {
             $bytes = $width;
         } else {
             $chunks    = $width / Variable::EFFECTIVE_VLS_CHUNK;
@@ -202,7 +202,7 @@ class Utils
      */
     public static function widthToSegments($width)
     {
-        return Variable::isVeryLong($width) !== 0 ? ceil($width / Variable::EFFECTIVE_VLS_CHUNK) : 1;
+        return Variable::isVeryLong($width) !== false ? ceil($width / Variable::EFFECTIVE_VLS_CHUNK) : 1;
     }
 
     /**
@@ -233,7 +233,7 @@ class Utils
         $segmentCount = self::widthToSegments($width);
         // assert($segment < $segmentCount);
 
-        if (Variable::isVeryLong($width) === 0) {
+        if (Variable::isVeryLong($width) === false) {
             return $width;
         }
 

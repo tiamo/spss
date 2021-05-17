@@ -71,6 +71,34 @@ class Reader
         $this->_buffer->context = $this;
     }
 
+    private function readBodyInternal()
+    {
+        $infoCollection = new Record\InfoCollection();
+        $posVar         = 0;
+        do {
+            $recType = $this->_buffer->readInt();
+            switch ($recType) {
+                case Record\Variable::TYPE:
+                    $variable               = Record\Variable::fill($this->_buffer);
+                    $variable->realPosition = $posVar;
+                    $this->variables[]             = $variable;
+                    $posVar++;
+                    break;
+                case Record\ValueLabel::TYPE:
+                    $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [
+                        'variables' => $this->variables,
+                    ]);
+                    break;
+                case Record\Info::TYPE:
+                    $this->info = $infoCollection->fill($this->_buffer);
+                    break;
+                case Record\Document::TYPE:
+                    $this->documents = Record\Document::fill($this->_buffer)->toArray();
+                    break;
+            }
+        } while (Record\Data::TYPE !== $recType);
+    }
+
     /**
      * @param string $file
      *
@@ -127,33 +155,7 @@ class Reader
         }
 
         // TODO: refactory
-        $infoCollection = new Record\InfoCollection();
-        $tempVars       = [];
-        $posVar         = 0;
-
-        do {
-            $recType = $this->_buffer->readInt();
-            switch ($recType) {
-                case Record\Variable::TYPE:
-                    $variable               = Record\Variable::fill($this->_buffer);
-                    $variable->realPosition = $posVar;
-                    $tempVars[]             = $variable;
-                    $posVar++;
-                    break;
-                case Record\ValueLabel::TYPE:
-                    $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [
-                        // TODO: refactory
-                        'variables' => $tempVars,
-                    ]);
-                    break;
-                case Record\Info::TYPE:
-                    $this->info = $infoCollection->fill($this->_buffer);
-                    break;
-                case Record\Document::TYPE:
-                    $this->documents = Record\Document::fill($this->_buffer)->toArray();
-                    break;
-            }
-        } while (Record\Data::TYPE !== $recType);
+        $this->readBodyInternal();
 
         // Excluding the records that are creating only as a consequence of very long string records
         // from the variables computation.
@@ -163,9 +165,11 @@ class Reader
         }
 
         $segmentsCount = 0;
+        $tempVars = $this->variables;
+        $this->variables = [];
         foreach ($tempVars as $index => $var) {
             // Skip blank records from the variables computation
-            if (-1 !== $var->width) {
+            if ($var->width !== -1) {
                 if ($segmentsCount <= 0) {
                     $segmentsCount = Utils::widthToSegments(
                         isset($veryLongStrings[$var->name]) ?

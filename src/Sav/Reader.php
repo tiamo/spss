@@ -154,8 +154,27 @@ class Reader
             $this->readHeader();
         }
 
-        // TODO: refactory
+        // TODO: We need to find a better way to decode the body, because the CharacterEncoding
+        // data is not necessary set at the beginning of the body and any string that is set
+        // before it is then not decode. So, we need to read twice the body, once to find the
+        // encode and another to decode it.
+        $headerPosition = $this->_buffer->position();
         $this->readBodyInternal();
+
+        if (isset($this->info) && isset($this->info[Record\Info\CharacterEncoding::SUBTYPE])) {
+            $encode = $this->info[Record\Info\CharacterEncoding::SUBTYPE]->value;
+            // If is not set assume the UTF-8 encode.
+            $encode = (isset($encode) && !empty($encode)) ? $encode : "UTF-8";
+            $this->_buffer->charset = $encode;
+
+            if ($this->_buffer->seek($headerPosition) === 0) {
+                $this->valueLabels = [];
+                $this->info        = [];
+                $this->documents   = [];
+                $this->variables   = [];
+                $this->readBodyInternal();
+            }
+        }
 
         // Excluding the records that are creating only as a consequence of very long string records
         // from the variables computation.

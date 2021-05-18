@@ -98,7 +98,7 @@ class Writer
         $this->info[Record\Info\LongStringValueLabels::SUBTYPE]   = new Record\Info\LongStringValueLabels();
         $this->info[Record\Info\LongStringMissingValues::SUBTYPE] = new Record\Info\LongStringMissingValues();
 
-        $encode = (isset($data['info']) && isset($data['info']['characterEncoding'])) ? $config['info']['characterEncoding'] : 'UTF-8';
+        $encode = (isset($data['info']) && isset($data['info']['characterEncoding'])) ? $data['info']['characterEncoding'] : 'UTF-8';
         $this->info[Record\Info\CharacterEncoding::SUBTYPE]       = new Record\Info\CharacterEncoding($encode);
         $this->buffer->charset = $encode;
 

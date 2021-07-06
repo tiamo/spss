@@ -47,16 +47,28 @@ class Writer
      * Writer constructor.
      *
      * @param array $data
+     * @param Buffer $buffer
      *
      */
-    public function __construct($data = [])
+    public function __construct($data = [], $buffer = null)
     {
-        $this->buffer          = Buffer::factory();
+        $this->buffer          = isset($buffer) ? $buffer : Buffer::factory();
         $this->buffer->context = $this;
 
         if (!empty($data)) {
             $this->write($data);
         }
+    }
+    
+    /**
+     * @param array $data
+     * @param string $file
+     *
+     * @return Writer
+     */
+    public static function createInFile($data = [], $file)
+    {
+        return new self($data, Buffer::factory(fopen($file, 'wb+')));
     }
 
     public function write($data)

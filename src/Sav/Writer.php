@@ -130,13 +130,13 @@ class Writer
             $variable->print = [
                 0,
                 $var->format,
-                $var->width !== [] ? min($var->width, 255) : 8,
+                $var->width > 0 ? min($var->width, 255) : 8,
                 $var->decimals,
             ];
             $variable->write = [
                 0,
                 $var->format,
-                $var->width !== [] ? min($var->width, 255) : 8,
+                $var->width > 0 ? min($var->width, 255) : 8,
                 $var->decimals,
             ];
 
@@ -188,7 +188,7 @@ class Writer
 
             $this->info[Record\Info\LongVariableNames::SUBTYPE][$shortName] = $var->name;
 
-            if (Record\Variable::isVeryLong($var->width) !== 0) {
+            if (Record\Variable::isVeryLong($var->width) !== false) {
                 $this->info[Record\Info\VeryLongString::SUBTYPE][$shortName] = $var->width;
             }
 

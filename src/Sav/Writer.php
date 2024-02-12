@@ -100,7 +100,7 @@ class Writer
 
         $encode = (isset($data['info']) && isset($data['info']['characterEncoding'])) ? $data['info']['characterEncoding'] : 'UTF-8';
         $this->info[Record\Info\CharacterEncoding::SUBTYPE]       = new Record\Info\CharacterEncoding($encode);
-        $this->buffer->charset = $encode;
+        $this->buffer->streamCharset = $encode;
 
         $this->data = new Record\Data();
 

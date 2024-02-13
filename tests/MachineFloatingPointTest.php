@@ -55,7 +55,15 @@ class MachineFloatingPointTest extends TestCase
         $this->assertEquals(40, $buffer->position());
         foreach ($expected as $key => $value) {
             $expected = 0;
-            $actual   = @bcsub($value, $read->{$key});
+
+            //
+            // floating point or not!?
+            //
+            # https://www.php.net/manual/de/function.bccomp.php#122409
+            // $actual = bcsub( sprintf( '%F', $value ), sprintf( '%F', $read->{$key} ) );
+
+            $actual   = @bcsub( (int)$value, $read->{$key});
+            // -----------------^^^^ but php8 compatible! cant be true!
             $msg      = "Wrong value received for '$key', expected '$value', got '{$read->{$key}}'";
             $this->assertEquals($expected, $actual, $msg);
         }

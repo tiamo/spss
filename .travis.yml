@@ -1,5 +1,10 @@
+#dist: trusty
+
+env:
+  global:
+    - XDEBUG_MODE=coverage
+
 language: php
-dist: trusty
 
 branches:
   only:
@@ -17,6 +22,13 @@ php:
   - 7.2
   - 7.3
   - 7.4
+  - 8.0
+  - 8.1
+
+matrix:
+  allow_failures:
+    - php: 8.1
+    - php: nightly
 
 #env:
 #  matrix:
@@ -26,12 +38,9 @@ php:
 install:
   - travis_retry composer update --no-interaction --no-suggest --prefer-source
 
-before_script:
-  - phpenv config-rm xdebug.ini || true
+#before_script:
+#  - phpenv config-rm xdebug.ini || true
 
 script:
   - composer test
-
-#matrix:
-#  allow_failures:
-#    - php: nightly
+  - ./vendor/bin/phpunit -c ./phpunit.xml --coverage-text

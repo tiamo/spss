@@ -214,7 +214,22 @@ class Buffer
     }
 
     /**
-     * @param $data
+     * @param string $data
+     * @param int $maxLength
+     *
+     * @return int
+     */
+    public function lengthBytes($data, $maxLength)
+    {
+        if (strtolower($this->streamCharset) != strtolower($this->systemCharset)) {
+            $data = mb_convert_encoding($data, $this->streamCharset, $this->systemCharset);
+        }
+        $data = mb_strcut($data, 0, $maxLength, $this->streamCharset);
+        return \strlen($data);
+    }
+
+    /**
+     * @param string $data
      * @param int|string $length
      *
      * @return false|int
@@ -224,7 +239,9 @@ class Buffer
         if (strtolower($this->streamCharset) != strtolower($this->systemCharset)) {
             $data = mb_convert_encoding($data, $this->streamCharset, $this->systemCharset);
         }
-
+        if (isset($length) && ($length != '*')) {
+            $data = mb_strcut($data, 0, $length, $this->streamCharset);
+        }
         return $this->write(pack('A' . $length, $data));
     }
 

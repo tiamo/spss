@@ -213,7 +213,22 @@ class Buffer
     }
 
     /**
-     * @param $data
+     * @param string $data
+     * @param int $maxLength
+     *
+     * @return int
+     */
+    public function lengthBytes($data, $maxLength)
+    {
+        if (strtolower($this->streamCharset) != strtolower($this->systemCharset)) {
+            $data = mb_convert_encoding($data, $this->streamCharset, $this->systemCharset);
+        }
+        $data = mb_strcut($data, 0, $maxLength, $this->streamCharset);
+        return \strlen($data);
+    }
+
+    /**
+     * @param string $data
      * @param int|string $length
      * @param null       $charset
      *
@@ -226,7 +241,9 @@ class Buffer
         if (isset($data) && (strtolower($charsetFrom) != strtolower($charsetTo))) {
             $data = mb_convert_encoding($data, $charsetTo, $charsetFrom);
         }
-        //file_put_contents("/var/encuestas/test.txt", "To: " . $charsetTo . " FROM:" . $charsetFrom . "\n", FILE_APPEND | LOCK_EX);
+        if (isset($length) && ($length != '*')) {
+            $data = mb_strcut($data, 0, $length, $this->charset);
+        }
         return $this->write(pack('A' . $length, $data));
     }
 

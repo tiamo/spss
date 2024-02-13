@@ -24,12 +24,12 @@ class MachineFloatingPointTest extends TestCase
             ],
             [
                 [],
-                // -1.7976931348623E+308 php min double
-                //  1.7976931348623E+308 php max double
+                // -1.7976931348623E+308 php min double -PHP_FLOAT_MAX
+                //  1.7976931348623E+308 php max double PHP_FLOAT_MAX
                 [
-                    'sysmis'  => -1.7976931348623158E+308,
-                    'highest' => 1.7976931348623158E+308,
-                    'lowest'  => -1.7976931348623158E+308,
+                    'sysmis'  => -PHP_FLOAT_MAX,
+                    'highest' =>  PHP_FLOAT_MAX,
+                    'lowest'  => -PHP_FLOAT_MAX,
                 ],
             ],
         ];
@@ -54,10 +54,8 @@ class MachineFloatingPointTest extends TestCase
         $read = MachineFloatingPoint::fill($buffer);
         $this->assertEquals(40, $buffer->position());
         foreach ($expected as $key => $value) {
-            $expected = 0;
-            $actual   = @bcsub($value, $read->{$key});
             $msg      = "Wrong value received for '$key', expected '$value', got '{$read->{$key}}'";
-            $this->assertEquals($expected, $actual, $msg);
+            $this->assertEquals($value, $read->{$key}, $msg);
         }
     }
 }

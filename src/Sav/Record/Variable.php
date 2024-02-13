@@ -173,8 +173,7 @@ class Variable extends Record
                 $buffer->writeInt(0); // No missing values
                 $buffer->writeInt($format); // Print format
                 $buffer->writeInt($format); // Write format
-                $buffer->writeString($this->getSegmentName($i - 1), 8);
-
+                $buffer->writeString($this->getSegmentName($buffer, $i - 1), 8);
                 $this->writeBlank($buffer, $segmentWidth);
             }
         }
@@ -204,7 +203,7 @@ class Variable extends Record
      *
      * @return string
      */
-    public function getSegmentName($seg = 0)
+    public function getSegmentName($buffer, $seg = 0)
     {
         // TODO: refactory
         $str = "a";

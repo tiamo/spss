@@ -218,12 +218,14 @@ class Buffer
      *
      * @return int
      */
-    public function lengthBytes($data, $maxLength)
+    public function lengthBytes($data, $maxLength = null)
     {
         if (strtolower($this->streamCharset) != strtolower($this->systemCharset)) {
             $data = mb_convert_encoding($data, $this->streamCharset, $this->systemCharset);
         }
-        $data = mb_strcut($data, 0, $maxLength, $this->streamCharset);
+        if (isset($maxLength)) {
+            $data = mb_strcut($data, 0, $maxLength, $this->streamCharset);
+        }
         return \strlen($data);
     }
 

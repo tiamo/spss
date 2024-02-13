@@ -59,7 +59,7 @@ class Writer
             $this->write($data);
         }
     }
-    
+
     /**
      * @param array $data
      * @param string $file
@@ -110,10 +110,13 @@ class Writer
                 $var = new Variable($var);
             }
 
-            //if (! preg_match('/^[A-Za-z0-9_]+$/', $var->name)) {
             // UTF-8 and '.' characters could pass here
-            if (!preg_match('/^[A-Za-z0-9_\.\x{4e00}-\x{9fa5}]+$/u', $var->name)) {
+            if (!preg_match('/^(?!#|\$|\.)[\w0-9_.#@$\x{4e00}-\x{9fa5}]+(?<!\.|_)$/u', $var->name)) {
                 throw new \InvalidArgumentException(sprintf('Variable name `%s` contains an illegal character.', $var->name));
+            }
+
+            if (in_array($var->name, ['ALL', 'AND', 'BY', 'EQ', 'GE', 'GT', 'LE', 'LT', 'NE', 'NOT', 'OR', 'TO', 'WITH'])) {
+                throw new \InvalidArgumentException(sprintf('Variable name `%s` is reserved!.', $var->name));
             }
 
             if (empty($var->width)) {

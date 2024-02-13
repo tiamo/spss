@@ -141,17 +141,10 @@ class Variable extends Record
         $buffer->writeString($this->name, 8);
 
         if ($hasLabel) {
-            // Maxlength is 255 bytes, since we write utf8 a char can be multiple bytes
-            $labelLength      = min(mb_strlen($this->label), 255);
-            $label            = mb_substr($this->label, 0, $labelLength);
-            $labelLengthBytes = mb_strlen($label, '8bit');
-            while ($labelLengthBytes > 255) {
-                // Strip one char, can be multiple bytes
-                $label            = mb_substr($label, 0, -1);
-                $labelLengthBytes = mb_strlen($label, '8bit');
-            }
+            $labelLengthBytes = $buffer->lengthBytes($this->label, self::REAL_VLS_CHUNK);
+            $labelLengthBytesRound = Utils::roundUp($labelLengthBytes, 4);
             $buffer->writeInt($labelLengthBytes);
-            $buffer->writeString($label, Utils::roundUp($labelLengthBytes, 4));
+            $buffer->writeString($this->label, $labelLengthBytesRound);
         }
 
         // TODO: test
@@ -219,9 +212,9 @@ class Variable extends Record
     {
         // TODO: refactory
         $name = $this->name;
-        $name = mb_substr($name, 0, 6);
+        $name = mb_strcut($name, 0, 6, $buffer->systemCharset);
         $name .= $seg;
 
-        return mb_strtoupper($name);
+        return mb_strtoupper($name, $buffer->systemCharset);
     }
 }

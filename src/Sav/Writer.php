@@ -101,7 +101,22 @@ class Writer
 
         $this->data = new Record\Data();
 
-        $nominalIdx = 0;
+        $nominalIdx        = 0;
+        $reservedNamesIndex = [
+            'ALL'  => 0,
+            'AND'  => 0,
+            'BY'   => 0,
+            'EQ'   => 0,
+            'GE'   => 0,
+            'GT'   => 0,
+            'LE'   => 0,
+            'LT'   => 0,
+            'NE'   => 0,
+            'NOT'  => 0,
+            'OR'   => 0,
+            'TO'   => 0,
+            'WITH' => 0,
+        ];
 
         /** @var Variable $var */
         // for ($idx = 0; $idx <= $variablesCount; $idx++) {
@@ -116,7 +131,8 @@ class Writer
             }
 
             if (in_array($var->name, ['ALL', 'AND', 'BY', 'EQ', 'GE', 'GT', 'LE', 'LT', 'NE', 'NOT', 'OR', 'TO', 'WITH'])) {
-                throw new \InvalidArgumentException(sprintf('Variable name `%s` is reserved!.', $var->name));
+                $reservedNamesIndex[$var->name]++;
+                $var->name = $var->name . '_' . $reservedNamesIndex[$var->name];
             }
 
             if (empty($var->width)) {

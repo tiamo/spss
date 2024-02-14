@@ -7,7 +7,18 @@ use SPSS\Tests\TestCase;
 
 class NamingTest extends TestCase
 {
-    public function test()
+    public function illegalNameProvider()
+    {
+        return [
+            ['#FOO', ''],
+            ['$FOO', ''],
+            ['.FOO', ''],
+            ['FOO.', ''],
+            ['FOO_', ''],
+        ];
+    }
+
+    public function testReservedNames()
     {
         $data = [
             'header'    => [
@@ -43,5 +54,33 @@ class NamingTest extends TestCase
         $this->assertEquals($data['variables'][0]['name'] . '_' . 1, $reader->info[LongVariableNames::SUBTYPE]['V00001']);
         $this->assertEquals($data['variables'][1]['name'] . '_' . 2, $reader->info[LongVariableNames::SUBTYPE]['V00002']);
         $this->assertEquals($data['variables'][2]['name'] . '_' . 1, $reader->info[LongVariableNames::SUBTYPE]['V00003']);
+    }
+
+
+    /**
+     * @dataProvider illegalNameProvider
+     */
+    public function testIllegalNames($name)
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf('Variable name `%s` contains an illegal character.', $name));
+
+        $data = [
+            'header'    => [
+                'prodName'     => '@(#) IBM SPSS STATISTICS',
+                'layoutCode'   => 2,
+                'creationDate' => date('d M y'),
+                'creationTime' => date('H:i:s'),
+            ],
+            'variables' => [
+                [
+                    'name'   => $name,
+                    'width'  => 16,
+                    'format' => 1,
+                ],
+            ],
+        ];
+
+        new Writer($data);
     }
 }

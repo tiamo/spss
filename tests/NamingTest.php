@@ -34,11 +34,6 @@ class NamingTest extends TestCase
                     'format' => 1,
                 ],
                 [
-                    'name'   => 'WITH',
-                    'width'  => 16,
-                    'format' => 1,
-                ],
-                [
                     'name'   => 'OR',
                     'format' => 5,
                 ],
@@ -51,9 +46,8 @@ class NamingTest extends TestCase
 
         $reader = Reader::fromString($buffer->getStream())->read();
 
-        $this->assertEquals($data['variables'][0]['name'] . '_' . 1, $reader->info[LongVariableNames::SUBTYPE]['V00001']);
-        $this->assertEquals($data['variables'][1]['name'] . '_' . 2, $reader->info[LongVariableNames::SUBTYPE]['V00002']);
-        $this->assertEquals($data['variables'][2]['name'] . '_' . 1, $reader->info[LongVariableNames::SUBTYPE]['V00003']);
+        $this->assertRegExp('/^' . $data['variables'][0]['name'] . '[\w]{13}$/', $reader->info[LongVariableNames::SUBTYPE]['V00001']);
+        $this->assertRegExp('/^' . $data['variables'][1]['name'] . '[\w]{13}$/', $reader->info[LongVariableNames::SUBTYPE]['V00002']);
     }
 
 

@@ -37,7 +37,7 @@ class SavRandomReadWriteTest extends TestCase
         $count = 1; // mt_rand(1, 20);
         for ($i = 0; $i < $count; $i++) {
             $var = $this->generateVariable([
-                    'id'         => $this->generateRandomString(mt_rand(2, 100)),
+                    'id'         => $this->generateRandomString(mt_rand(2, 100)) . 'a',
                     'casesCount' => $header['casesCount'],
                 ]
             );
@@ -50,7 +50,7 @@ class SavRandomReadWriteTest extends TestCase
         $header['casesCount'] = 5;
         for ($i = 0; $i < 100; $i++) {
             $variable = $this->generateVariable([
-                'id'         => $this->generateRandomString(mt_rand(2, 100)),
+                'id'         => $this->generateRandomString(mt_rand(2, 100)) . 'a',
                 'casesCount' => $header['casesCount'],
             ]);
             $header['nominalCaseSize'] = Utils::widthToOcts($variable['width']);

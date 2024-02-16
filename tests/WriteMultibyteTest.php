@@ -3,6 +3,7 @@
 namespace SPSS\Tests;
 
 use SPSS\Sav\Reader;
+use SPSS\Sav\Record\Info\LongVariableNames;
 use SPSS\Sav\Variable;
 use SPSS\Sav\Writer;
 
@@ -11,7 +12,7 @@ class WriteMultibyteTest extends TestCase
     public function testMultiByteLabel()
     {
         $data = [
-            'header' => [
+            'header'    => [
                 'prodName'     => '@(#) IBM SPSS STATISTICS',
                 'layoutCode'   => 2,
                 'creationDate' => date('d M y'),
@@ -55,13 +56,12 @@ class WriteMultibyteTest extends TestCase
 
     /**
      * ISSUE #20.
-     *
      * Chinese value labels seem to work fine, but free text does not work
      */
     public function testChinese()
     {
         $input = [
-            'header' => [
+            'header'    => [
                 'prodName'     => '@(#) IBM SPSS STATISTICS 64-bit Macintosh 23.0.0.0',
                 'creationDate' => '05 Oct 18',
                 'creationTime' => '01:36:53',
@@ -124,4 +124,40 @@ class WriteMultibyteTest extends TestCase
         $expected[2][1] = $input['variables'][1]['data'][2];
         $this->assertEquals($expected, $reader->data);
     }
+
+    public function testMultiByteVariableName()
+    {
+        $data = [
+            'header'    => [
+                'prodName'     => '@(#) IBM SPSS STATISTICS',
+                'layoutCode'   => 2,
+                'creationDate' => date('d M y'),
+                'creationTime' => date('H:i:s'),
+            ],
+            'variables' => [
+                [
+                    'name'   => 'Å',
+                    'width'  => 16,
+                    'format' => 1,
+                ],
+                [
+                    'name'   => 'DSADÆØØÅÅÅÅÅSAAA',
+                    'format' => 5,
+                ],
+            ],
+        ];
+        $writer = new Writer($data);
+
+        $buffer = $writer->getBuffer();
+        $buffer->rewind();
+
+        $reader = Reader::fromString($buffer->getStream())->read();
+
+        // Short variable name
+        $this->assertEquals($data['variables'][0]['name'], $reader->info[LongVariableNames::SUBTYPE]['V00001']);
+        // Long variable name
+        $this->assertEquals($data['variables'][1]['name'], $reader->info[LongVariableNames::SUBTYPE]['V00002']);
+
+    }
+
 }

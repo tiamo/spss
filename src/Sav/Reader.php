@@ -81,7 +81,7 @@ class Reader
                 case Record\Variable::TYPE:
                     $variable               = Record\Variable::fill($this->_buffer);
                     $variable->realPosition = $posVar;
-                    $this->variables[]             = $variable;
+                    $this->variables[]      = $variable;
                     $posVar++;
                     break;
                 case Record\ValueLabel::TYPE:
@@ -213,7 +213,7 @@ class Reader
 
         return $this;
     }
-    
+
     /**
      * @return booleam
      */
@@ -247,6 +247,14 @@ class Reader
         }
 
         return false;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNumberOfCases()
+    {
+        return $this->_buffer->context->header->casesCount;
     }
 
     /**

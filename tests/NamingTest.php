@@ -50,7 +50,6 @@ class NamingTest extends TestCase
         $this->assertRegExp('/^' . $data['variables'][1]['name'] . '[\w]{13}$/', $reader->info[LongVariableNames::SUBTYPE]['V00002']);
     }
 
-
     /**
      * @dataProvider illegalNameProvider
      */

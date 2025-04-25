@@ -165,7 +165,7 @@ class Reader
             $encode = $this->info[Record\Info\CharacterEncoding::SUBTYPE]->value;
             // If is not set assume the UTF-8 encode.
             $encode = (isset($encode) && !empty($encode)) ? $encode : "UTF-8";
-            $this->_buffer->streamCharset = $encode;
+            $this->_buffer->charset = $encode;
 
             if ($this->_buffer->seek($headerPosition) === 0) {
                 $this->valueLabels = [];

@@ -169,7 +169,7 @@ class Variable extends Record
         $this->writeBlank($buffer, $seg0width);
 
         // Write additional segments for very long string variables.
-        if (self::isVeryLong($this->width) !== 0) {
+        if (self::isVeryLong($this->width) !== false) {
             $segmentCount = Utils::widthToSegments($this->width);
             for ($i = 1; $i < $segmentCount; $i++) {
                 $segmentWidth = Utils::segmentAllocWidth($this->width, $i);

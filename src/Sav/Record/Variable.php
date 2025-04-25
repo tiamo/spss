@@ -176,15 +176,11 @@ class Variable extends Record
                 $format       = Utils::bytesToInt([0, 1, max($segmentWidth, 1), 0]);
                 $buffer->writeInt(self::TYPE);
                 $buffer->writeInt($segmentWidth);
-                $buffer->writeInt($hasLabel); // No variable label
+                $buffer->writeInt(0); // No variable label
                 $buffer->writeInt(0); // No missing values
                 $buffer->writeInt($format); // Print format
                 $buffer->writeInt($format); // Write format
                 $buffer->writeString($this->getSegmentName($i - 1), 8);
-                if ($hasLabel) {
-                    $buffer->writeInt($labelLengthBytes);
-                    $buffer->writeString($label, Utils::roundUp($labelLengthBytes, 4));
-                }
 
                 $this->writeBlank($buffer, $segmentWidth);
             }

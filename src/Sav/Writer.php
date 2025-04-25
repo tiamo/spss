@@ -124,6 +124,7 @@ class Writer
         $this->info[Record\Info\MachineInteger::SUBTYPE]->characterCode = $chCode;
         $this->data = new Record\Data();
         $nominalIdx = 0;
+        $shortVarsSufix = array();
 
         /** @var Variable $var */
         // for ($idx = 0; $idx <= $variablesCount; $idx++) {
@@ -148,8 +149,10 @@ class Writer
             $variable = new Record\Variable();
 
             // TODO: refactory - keep 7 positions so we can add after that for 100 very long string segments
-            $variable->name  = (Record\Variable::isVeryLong($var->width) !== false) ?
-                               mb_strtoupper($var->name) : 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
+            $sufix = mb_strtoupper(mb_substr($var->name, 0, min(mb_strlen($var->name), 5)));
+            $variable->name  = ((Record\Variable::isVeryLong($var->width) !== false) && (!in_array($sufix, $shortVarsSufix))) ?
+                               $sufix : 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
+            array_push($shortVarsSufix, $sufix);
             $variable->width = Variable::FORMAT_TYPE_A === $var->format ? $var->width : 0;
 
             $variable->label = $var->label;

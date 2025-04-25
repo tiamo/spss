@@ -222,6 +222,10 @@ class Variable extends Record
         for ($i = 0; $i < $seg; $i++) {
             ++$str;
         }
-        return mb_strtoupper(mb_strcut($this->name."_".$str, 0, 64));
+        if (($this->name[0] === 'V') && is_numeric(mb_substr($this->name, 1))) {
+            return mb_strtoupper($this->name);
+        }
+        $sufix = str_pad($str, 2, "_", STR_PAD_LEFT);
+        return mb_strtoupper(mb_substr($this->name.$sufix, 0, 8));
     }
 }

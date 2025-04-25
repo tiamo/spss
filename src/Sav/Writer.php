@@ -148,7 +148,8 @@ class Writer
             $variable = new Record\Variable();
 
             // TODO: refactory - keep 7 positions so we can add after that for 100 very long string segments
-            $variable->name  = 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
+            $variable->name  = (Record\Variable::isVeryLong($var->width) !== false) ?
+                               mb_strtoupper($var->name) : 'V' . str_pad($idx + 1, 5, 0, STR_PAD_LEFT);
             $variable->width = Variable::FORMAT_TYPE_A === $var->format ? $var->width : 0;
 
             $variable->label = $var->label;

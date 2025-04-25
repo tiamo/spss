@@ -218,10 +218,10 @@ class Variable extends Record
     public function getSegmentName($seg = 0)
     {
         // TODO: refactory
-        $name = $this->name;
-        $name = mb_substr($name, 0, 6);
-        $name .= $seg;
-
-        return mb_strtoupper($name);
-    }
+        $str = "a";
+        for ($i = 0; $i < $seg; $i++) {
+            ++$str; 
+        }
+        return mb_strtoupper($this->name."_".$str);      
+    } 
 }

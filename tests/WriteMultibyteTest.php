@@ -12,7 +12,7 @@ class WriteMultibyteTest extends TestCase
     public function testMultiByteLabel()
     {
         $data = [
-            'header'    => [
+            'header' => [
                 'prodName'     => '@(#) IBM SPSS STATISTICS',
                 'layoutCode'   => 2,
                 'creationDate' => date('d M y'),
@@ -61,7 +61,7 @@ class WriteMultibyteTest extends TestCase
     public function testChinese()
     {
         $input = [
-            'header'    => [
+            'header' => [
                 'prodName'     => '@(#) IBM SPSS STATISTICS 64-bit Macintosh 23.0.0.0',
                 'creationDate' => '05 Oct 18',
                 'creationTime' => '01:36:53',
@@ -128,7 +128,7 @@ class WriteMultibyteTest extends TestCase
     public function testMultiByteVariableName()
     {
         $data = [
-            'header'    => [
+            'header' => [
                 'prodName'     => '@(#) IBM SPSS STATISTICS',
                 'layoutCode'   => 2,
                 'creationDate' => date('d M y'),
@@ -157,7 +157,5 @@ class WriteMultibyteTest extends TestCase
         $this->assertEquals($data['variables'][0]['name'], $reader->info[LongVariableNames::SUBTYPE]['V00001']);
         // Long variable name
         $this->assertEquals($data['variables'][1]['name'], $reader->info[LongVariableNames::SUBTYPE]['V00002']);
-
     }
-
 }

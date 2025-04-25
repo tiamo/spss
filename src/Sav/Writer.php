@@ -71,6 +71,11 @@ class Writer
         return new self($data, Buffer::factory(fopen($file, 'wb+')));
     }
 
+    /**
+     * @param array $data
+     *
+     * @return void
+     */
     public function write($data)
     {
         $this->header                  = new Record\Header($data['header']);
@@ -102,9 +107,23 @@ class Writer
         $this->info[Record\Info\CharacterEncoding::SUBTYPE]       = new Record\Info\CharacterEncoding($encode);
         $this->buffer->charset = $encode;
 
-        $this->data = new Record\Data();
+        // FIXME: This means we can not set any other encode here?
+        // https://www.gnu.org/software/pspp/pspp-dev/html_node/Machine-Integer-Info-Record.html#character_002dcode
+        $charactersCode = array(
+            "utf-8" => 65001,
+            "iso 8859-1" => 28591,
+            "windows-1252" => 1252,
+            "windows-1250" => 1250,
+            "dec kanji" => 4,
+            "8-bit ascii" => 3,
+            "7-bit ascii" => 2,
+            "ebcdic" => 1
+        );
 
-        $nominalIdx        = 0;
+        $chCode = isset($charactersCode[strtolower($encode)]) ? $charactersCode[strtolower($encode)] : 65001;
+        $this->info[Record\Info\MachineInteger::SUBTYPE]->characterCode = $chCode;
+        $this->data = new Record\Data();
+        $nominalIdx = 0;
 
         /** @var Variable $var */
         // for ($idx = 0; $idx <= $variablesCount; $idx++) {
@@ -186,8 +205,8 @@ class Writer
                             'value' => $key,
                             'label' => $value,
                         ];
-                        $valueLabel->indexes = [$nominalIdx + 1];
                     }
+                    $valueLabel->indexes = [$nominalIdx + 1];
                     $this->valueLabels[] = $valueLabel;
                 }
             }
@@ -303,6 +322,14 @@ class Writer
     public function getBuffer()
     {
         return $this->buffer;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNumberOfCases()
+    {
+        return $this->header->casesCount;
     }
 
     /**

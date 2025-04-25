@@ -25,7 +25,7 @@ class MachineFloatingPointTest extends TestCase
             [
                 [],
                 // -1.7976931348623E+308 php min double -PHP_FLOAT_MAX
-                //  1.7976931348623E+308 php max double PHP_FLOAT_MAX
+                //  1.7976931348623E+308 php max double  PHP_FLOAT_MAX
                 [
                     'sysmis'  => -PHP_FLOAT_MAX,
                     'highest' =>  PHP_FLOAT_MAX,

@@ -220,8 +220,8 @@ class Variable extends Record
         // TODO: refactory
         $str = "a";
         for ($i = 0; $i < $seg; $i++) {
-            ++$str; 
+            ++$str;
         }
-        return mb_strtoupper($this->name."_".$str);      
-    } 
+        return mb_strtoupper(mb_strcut($this->name."_".$str, 0, 64));
+    }
 }

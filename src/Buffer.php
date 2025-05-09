@@ -173,7 +173,7 @@ class Buffer
             $charsetFrom = isset($this->charset) ? $this->charset : mb_internal_encoding();
             $charsetTo = isset($charset) ? $charset : mb_internal_encoding();
             if (isset($str) && (strtolower($charsetFrom) != strtolower($charsetTo))) {
-                $str = mb_convert_encoding($str, $charsetTo, $this->charset);
+                $str = mb_convert_encoding($str, $charsetTo, $charsetFrom);
             }
 
             return $str;
@@ -213,7 +213,26 @@ class Buffer
     }
 
     /**
-     * @param $data
+     * @param string $data
+     * @param int $maxLength
+     *
+     * @return int
+     */
+    public function lengthBytes($data, $maxLength = null, $charset = null)
+    {
+        $charsetTo = isset($this->charset) ? $this->charset : mb_internal_encoding();
+        $charsetFrom = isset($charset) ? $charset : mb_internal_encoding();
+        if (isset($data) && (strtolower($charsetTo) != strtolower($charsetFrom))) {
+            $data = mb_convert_encoding($data, $charsetTo, $charsetFrom);
+        }
+        if (isset($data) && isset($maxLength)) {
+            $data = mb_strcut($data, 0, $maxLength, $charsetTo);
+        }
+        return \strlen($data);
+    }
+
+    /**
+     * @param string $data
      * @param int|string $length
      * @param null       $charset
      *
@@ -226,7 +245,9 @@ class Buffer
         if (isset($data) && (strtolower($charsetFrom) != strtolower($charsetTo))) {
             $data = mb_convert_encoding($data, $charsetTo, $charsetFrom);
         }
-        //file_put_contents("/var/encuestas/test.txt", "To: " . $charsetTo . " FROM:" . $charsetFrom . "\n", FILE_APPEND | LOCK_EX);
+        if (isset($length) && ($length != '*')) {
+            $data = mb_strcut($data, 0, $length, $charsetTo);
+        }
         return $this->write(pack('A' . $length, $data));
     }
 

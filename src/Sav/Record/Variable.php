@@ -215,6 +215,6 @@ class Variable extends Record
             return mb_strtoupper($this->name);
         }
         $sufix = str_pad($str, 2, "_", STR_PAD_LEFT);
-        return mb_strtoupper(mb_substr($this->name.$sufix, 0, 8));
+        return mb_strtoupper(mb_strcut($this->name.$sufix, 0, 8));
     }
 }

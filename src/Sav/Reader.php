@@ -28,7 +28,7 @@ class Reader
     /**
      * @var array
      */
-    public $documents = [];
+    public $document;
 
     /**
      * @var Info[]
@@ -93,7 +93,7 @@ class Reader
                     $this->info = $infoCollection->fill($this->_buffer);
                     break;
                 case Record\Document::TYPE:
-                    $this->documents = Record\Document::fill($this->_buffer)->toArray();
+                    $this->document = Record\Document::fill($this->_buffer);
                     break;
             }
         } while (Record\Data::TYPE !== $recType);
@@ -170,7 +170,8 @@ class Reader
             if ($this->_buffer->seek($headerPosition) === 0) {
                 $this->valueLabels = [];
                 $this->info        = [];
-                $this->documents   = [];
+                $this->document    = null;
+                $this->data        = null;
                 $this->variables   = [];
                 $this->readBodyInternal();
             }
@@ -213,13 +214,21 @@ class Reader
 
         return $this;
     }
-    
+
     /**
      * @return []
      */
     public function getDataArray()
     {
         return (isset($this->data)) ? $this->data->toArray() : [];
+    }
+
+    /**
+     * @return []
+     */
+    public function getDocumentArray()
+    {
+        return (isset($this->document)) ? $this->document->toArray() : [];
     }
 
     /**

@@ -156,9 +156,9 @@ class Buffer
     }
 
     /**
-     * @param int  $length
-     * @param int  $round
-     * @param null $charset
+     * @param int         $length
+     * @param int         $round
+     * @param null|string $charset
      *
      * @return false|string
      */
@@ -213,8 +213,9 @@ class Buffer
     }
 
     /**
-     * @param string $data
-     * @param int $maxLength
+     * @param string      $data
+     * @param int         $maxLength
+     * @param null|string $charset
      *
      * @return int
      */
@@ -232,9 +233,9 @@ class Buffer
     }
 
     /**
-     * @param string $data
-     * @param int|string $length
-     * @param null       $charset
+     * @param string      $data
+     * @param int|string  $length
+     * @param null|string $charset
      *
      * @return false|int
      */

@@ -141,6 +141,7 @@ class Variable extends Record
         $buffer->writeString($this->name, 8);
 
         if ($hasLabel) {
+            // Maxlength is 255 bytes, since we write utf8 a char can be multiple bytes
             $labelLengthBytes = $buffer->lengthBytes($this->label, self::REAL_VLS_CHUNK);
             $labelLengthBytesRound = Utils::roundUp($labelLengthBytes, 4);
             $buffer->writeInt($labelLengthBytes);
@@ -214,6 +215,6 @@ class Variable extends Record
             return mb_strtoupper($this->name);
         }
         $sufix = str_pad($str, 2, "_", STR_PAD_LEFT);
-        return mb_strtoupper(mb_strcut($this->name.$sufix, 0, 8));
+        return mb_strtoupper(mb_substr($this->name.$sufix, 0, 8));
     }
 }

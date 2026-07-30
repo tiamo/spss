@@ -493,7 +493,7 @@ class Data extends Record
                                 $this->dataBuffer->writeString($val, 8);
                             }
                         } else {
-                            $this->dataBuffer->writeString($val, 8);
+                            $buffer->writeString($val, 8);
                         }
                         $offset += $chunkSize;
                     }

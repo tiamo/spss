@@ -32,11 +32,6 @@ class Data extends Record
     public $matrix = [];
 
     /**
-     * @var array [var_index]
-     */
-    public $row = [];
-
-    /**
      * @var array Latest opcodes data
      */
     protected $opcodes = [];
@@ -106,7 +101,7 @@ class Data extends Record
         }
 
         if (($case >= 0) && ($case < $casesCount)) {
-            $this->row = $this->readCaseData(
+            $this->matrix[0] = $this->readCaseData(
                 $buffer,
                 $compressed,
                 $bias,
@@ -291,7 +286,7 @@ class Data extends Record
      */
     public function getRow()
     {
-        return $this->row;
+        return (count($this->matrix) > 0) ? $this->matrix[0] : [];
     }
 
     /**

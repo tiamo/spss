@@ -127,7 +127,6 @@ class Writer
         $shortVarsPrefix = array();
 
         /** @var Variable $var */
-        // for ($idx = 0; $idx <= $variablesCount; $idx++) {
         foreach (array_values($data['variables']) as $idx => $var) {
             if (\is_array($var)) {
                 $var = new Variable($var);
@@ -173,11 +172,11 @@ class Writer
             $shortName = $variable->name;
             $longName  = $var->name;
 
-            if ($var->attributes !== []) {
+            if (\is_array($var->attributes) && (\count($var->attributes) !== 0)) {
                 $this->info[Record\Info\VariableAttributes::SUBTYPE][$longName] = $var->attributes;
             }
 
-            if ($var->missing !== []) {
+            if (\is_array($var->missing) && (\count($var->missing) !== 0)) {
                 if ($var->width <= 8) {
                     if (\count($var->missing) >= 3) {
                         $variable->missingValuesFormat = 3;
@@ -194,7 +193,7 @@ class Writer
 
             $this->variables[$idx] = $variable;
 
-            if ($var->values !== []) {
+            if (\is_array($var->values) && (\count($var->values) !== 0)) {
                 if ($variable->width > 8) {
                     $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName] = [
                         'width'  => $var->width,

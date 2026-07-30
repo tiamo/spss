@@ -122,7 +122,8 @@ class WriteMultibyteTest extends TestCase
         $expected[1][1] = $input['variables'][1]['data'][1];
         $expected[2][0] = $input['variables'][0]['data'][2];
         $expected[2][1] = $input['variables'][1]['data'][2];
-        $this->assertEquals($expected, $reader->data);
+        $data = $reader->getDataArray();
+        $this->assertEquals($expected, $data);
     }
 
     public function testMultiByteVariableName()

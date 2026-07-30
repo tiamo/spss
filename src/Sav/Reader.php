@@ -36,9 +36,9 @@ class Reader
     public $info = [];
 
     /**
-     * @var array
+     * @var Record\Data
      */
-    public $data = [];
+    public $data;
 
     /**
      * @var int
@@ -209,9 +209,17 @@ class Reader
      */
     public function readData()
     {
-        $this->data = Record\Data::fill($this->_buffer)->toArray();
+        $this->data = Record\Data::fill($this->_buffer);
 
         return $this;
+    }
+    
+    /**
+     * @return []
+     */
+    public function getDataArray()
+    {
+        return (isset($this->data)) ? $this->data->toArray() : [];
     }
 
     /**

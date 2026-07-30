@@ -105,7 +105,8 @@ class SavRandomReadWriteTest extends TestCase
             // Check variable data
 
             foreach ($var['data'] as $case => $value) {
-                $this->assertEquals($value, $reader->data[$case][$index]);
+                $data = $reader->getDataArray();
+                $this->assertEquals($value, $data[$case][$index]);
             }
 
             $index += isset($veryLongStrings[$readVariable->name]) ?

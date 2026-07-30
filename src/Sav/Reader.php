@@ -11,7 +11,7 @@ use SPSS\Utils;
 class Reader
 {
     /**
-     * @var Header
+     * @var Record\Header
      */
     public $header;
 
@@ -21,17 +21,17 @@ class Reader
     public $variables = [];
 
     /**
-     * @var ValueLabel[]
+     * @var Record\ValueLabel[]
      */
     public $valueLabels = [];
 
     /**
-     * @var array
+     * @var Record\Document
      */
     public $document;
 
     /**
-     * @var Info[]
+     * @var Record\Info[]
      */
     public $info = [];
 
@@ -58,7 +58,7 @@ class Reader
     /**
      * @var Buffer
      */
-    protected $_buffer;
+    protected $buffer;
 
     /**
      * Reader constructor.
@@ -67,8 +67,8 @@ class Reader
      */
     private function __construct(Buffer $buffer)
     {
-        $this->_buffer          = $buffer;
-        $this->_buffer->context = $this;
+        $this->buffer          = $buffer;
+        $this->buffer->context = $this;
     }
 
     private function readBodyInternal()
@@ -76,24 +76,24 @@ class Reader
         $infoCollection = new Record\InfoCollection();
         $posVar         = 0;
         do {
-            $recType = $this->_buffer->readInt();
+            $recType = $this->buffer->readInt();
             switch ($recType) {
                 case Record\Variable::TYPE:
-                    $variable               = Record\Variable::fill($this->_buffer);
+                    $variable               = Record\Variable::fill($this->buffer);
                     $variable->realPosition = $posVar;
                     $this->variables[]      = $variable;
                     $posVar++;
                     break;
                 case Record\ValueLabel::TYPE:
-                    $this->valueLabels[] = Record\ValueLabel::fill($this->_buffer, [
+                    $this->valueLabels[] = Record\ValueLabel::fill($this->buffer, [
                         'variables' => $this->variables,
                     ]);
                     break;
                 case Record\Info::TYPE:
-                    $this->info = $infoCollection->fill($this->_buffer);
+                    $this->info = $infoCollection->fill($this->buffer);
                     break;
                 case Record\Document::TYPE:
-                    $this->document = Record\Document::fill($this->_buffer);
+                    $this->document = Record\Document::fill($this->buffer);
                     break;
             }
         } while (Record\Data::TYPE !== $recType);
@@ -140,7 +140,7 @@ class Reader
      */
     public function readHeader()
     {
-        $this->header = Record\Header::fill($this->_buffer);
+        $this->header = Record\Header::fill($this->buffer);
 
         return $this;
     }
@@ -158,16 +158,16 @@ class Reader
         // data is not necessary set at the beginning of the body and any string that is set
         // before it is then not decode. So, we need to read twice the body, once to find the
         // encode and another to decode it.
-        $headerPosition = $this->_buffer->position();
+        $headerPosition = $this->buffer->position();
         $this->readBodyInternal();
 
         if (isset($this->info) && isset($this->info[Record\Info\CharacterEncoding::SUBTYPE])) {
             $encode = $this->info[Record\Info\CharacterEncoding::SUBTYPE]->value;
             // If is not set assume the UTF-8 encode.
             $encode = (isset($encode) && !empty($encode)) ? $encode : "UTF-8";
-            $this->_buffer->charset = $encode;
+            $this->buffer->charset = $encode;
 
-            if ($this->_buffer->seek($headerPosition) === 0) {
+            if ($this->buffer->seek($headerPosition) === 0) {
                 $this->valueLabels = [];
                 $this->info        = [];
                 $this->document    = null;
@@ -200,7 +200,7 @@ class Reader
                 $segmentsCount--;
             }
         }
-        $this->dataPosition = $this->_buffer->position();
+        $this->dataPosition = $this->buffer->position();
 
         return $this;
     }
@@ -210,7 +210,7 @@ class Reader
      */
     public function readData()
     {
-        $this->data = Record\Data::fill($this->_buffer);
+        $this->data = Record\Data::fill($this->buffer);
 
         return $this;
     }
@@ -239,7 +239,7 @@ class Reader
         if ($this->dataPosition !== -1) {
             $this->lastCase = -1;
             $this->record = null;
-            if ($this->_buffer->seek($this->dataPosition) === 0) {
+            if ($this->buffer->seek($this->dataPosition) === 0) {
                 return true;
             }
         }
@@ -257,8 +257,8 @@ class Reader
 
         $this->lastCase++;
 
-        if (($this->lastCase >= 0) && ($this->lastCase < $this->_buffer->context->header->casesCount)) {
-            $this->record->readCase($this->_buffer, $this->lastCase);
+        if (($this->lastCase >= 0) && ($this->lastCase < $this->buffer->context->header->casesCount)) {
+            $this->record->readCase($this->buffer, $this->lastCase);
 
             return true;
         }
@@ -271,7 +271,7 @@ class Reader
      */
     public function getNumberOfCases()
     {
-        return $this->_buffer->context->header->casesCount;
+        return $this->buffer->context->header->casesCount;
     }
 
     /**

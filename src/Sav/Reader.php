@@ -51,11 +51,6 @@ class Reader
     public $dataPosition = -1;
 
     /**
-     * @var record
-     */
-    public $record;
-
-    /**
      * @var Buffer
      */
     protected $buffer;
@@ -70,6 +65,16 @@ class Reader
         $this->buffer          = $buffer;
         $this->buffer->context = $this;
     }
+
+    /*private function getFullNameLabel($index) {
+        $subType = SPSS\Sav\Record\Info\LongVariableNames::SUBTYPE;
+        if (isset($this->info) && isset($this->info[$subType])) {
+            $names = $this->info[$subType]->data;
+            $shortName = $this->variables[$index]->name;
+            return isset($names[$shortName]) ? $names[$shortName] : $shortName;
+        }
+        return null;
+    }*/
 
     private function readBodyInternal()
     {
@@ -210,6 +215,8 @@ class Reader
      */
     public function readData()
     {
+        $this->rewindCaseIterator();
+        $this->dataPosition = $this->buffer->position();
         $this->data = Record\Data::fill($this->buffer);
 
         return $this;
@@ -238,7 +245,7 @@ class Reader
     {
         if ($this->dataPosition !== -1) {
             $this->lastCase = -1;
-            $this->record = null;
+            $this->data = null;
             if ($this->buffer->seek($this->dataPosition) === 0) {
                 return true;
             }
@@ -251,15 +258,12 @@ class Reader
      */
     public function readCase()
     {
-        if (!isset($this->record)) {
-            $this->record = Record\Data::create();
-        }
-
-        $this->lastCase++;
-
-        if (($this->lastCase >= 0) && ($this->lastCase < $this->buffer->context->header->casesCount)) {
-            $this->record->readCase($this->buffer, $this->lastCase);
-
+        if (($this->lastCase + 1 >= 0) && ($this->lastCase + 1 < $this->buffer->context->header->casesCount)) {
+            if (!isset($this->data)) {
+                $this->data = Record\Data::create();
+            }
+            $this->data->readCase($this->buffer, $this->lastCase + 1);
+            $this->lastCase++;
             return true;
         }
 
@@ -287,6 +291,6 @@ class Reader
      */
     public function getCase()
     {
-        return $this->record->getRow();
+        return (isset($this->data)) ? $this->data->getRow() : [];
     }
 }

@@ -42,11 +42,6 @@ class Data extends Record
     protected $opcodeIndex = 0;
 
     /**
-     * @var int Position where the data start
-     */
-    protected $startData = -1;
-
-    /**
      * @var Buffer Temporary buffer
      */
     protected $dataBuffer;
@@ -60,11 +55,11 @@ class Data extends Record
     public function readCase(Buffer $buffer, $case)
     {
         /* check if this is the first time */
-        if ($this->startData === -1) {
+        if ($this->startPos === -1) {
             $this->opcodeIndex = 8;
             $this->opcodes     = [];
 
-            $this->startData = $buffer->position();
+            $this->startPos = $buffer->position();
             if (0 !== $buffer->readInt()) {
                 throw new \InvalidArgumentException('Error reading data record. Non-zero value found.');
             }
@@ -101,6 +96,7 @@ class Data extends Record
         }
 
         if (($case >= 0) && ($case < $casesCount)) {
+            $this->matrix = [];
             $this->matrix[0] = $this->readCaseData(
                 $buffer,
                 $compressed,
@@ -114,8 +110,8 @@ class Data extends Record
 
     public function read(Buffer $buffer)
     {
-        if ($this->startData === -1) {
-            $this->startData = $buffer->position();
+        if ($this->startPos === -1) {
+            $this->startPos = $buffer->position();
         }
 
         if ($buffer->readInt() !== 0) {
@@ -207,7 +203,7 @@ class Data extends Record
         if (!isset($this->dataBuffer)) {
             $this->dataBuffer = Buffer::factory('', ['memory' => true]);
             $buffer->writeInt(self::TYPE);
-            $this->startData = $buffer->position();
+            $this->startPos = $buffer->position();
             $buffer->writeInt(0);
         }
 
@@ -251,7 +247,7 @@ class Data extends Record
         }
 
         $buffer->writeInt(self::TYPE);
-        $this->startData = $buffer->position();
+        $this->startPos = $buffer->position();
         $buffer->writeInt(0);
         $this->dataBuffer = Buffer::factory('', ['memory' => true]);
 

@@ -464,7 +464,7 @@ class Data extends Record
                     $buffer->writeDouble($value);
                 } elseif ($value === $sysmis || '' === $value) {
                     $this->writeOpcode($buffer, self::OPCODE_SYSMISS);
-                } elseif ($value >= 1 - $bias && $value <= 251 - $bias && $value === (int) $value) {
+                } elseif ($value >= 1 - $bias && $value <= 251 - $bias && (float) $value === (float) (int) $value) {
                     $this->writeOpcode($buffer, $value + $bias);
                 } else {
                     $this->writeOpcode($buffer, self::OPCODE_RAW_DATA);
@@ -493,7 +493,7 @@ class Data extends Record
                                 $this->dataBuffer->writeString($val, 8);
                             }
                         } else {
-                            $this->dataBuffer->writeString($val, 8);
+                            $buffer->writeString($val, 8);
                         }
                         $offset += $chunkSize;
                     }

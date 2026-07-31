@@ -49,11 +49,11 @@ class Utils
         };
 
         if (\SPSS\Sav\Variable::FORMAT_TYPE_TIME === $format) {
-            // TIME es una duración (puede superar 24h), no una hora del día.
+            // TIME is a duration (it can exceed 24 hours), not an hour of the day.
             return $parseTime($value);
         }
 
-        // DATE o DATETIME: separar parte de fecha y parte de hora opcional.
+        // DATE or DATETIME: separate date part and optional time part.
         $parts = preg_split('/\s+/', trim($value), 2);
         if (!preg_match('/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/', $parts[0], $m)) {
             return 0.0;
@@ -62,11 +62,11 @@ class Utils
         $month = $months[strtolower($m[2])] ?? 1;
         $year = (int) $m[3];
         if ($year < 100) {
-            $year += ($year < 69) ? 2000 : 1900; // misma convención de 2 dígitos que usa SPSS
+            $year += ($year < 69) ? 2000 : 1900;
         }
 
-        // Julian Day Number (Fliegel & Van Flandern), válido para fechas proléptico-gregorianas
-        // incluso anteriores a 1970/1582, evitando las limitaciones de strtotime().
+        // Julian Day Number (Fliegel & Van Flandern), valid for proleptic-Gregorian dates
+        // even earlier than 1970/1582, avoiding the limitations of strtotime().
         $jdn = function ($y, $m, $d) {
             $a = intdiv(14 - $m, 12);
             $y2 = $y + 4800 - $a;

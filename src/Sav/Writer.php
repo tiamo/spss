@@ -39,6 +39,16 @@ class Writer
     public $data;
 
     /**
+     * @var int
+     */
+    public $lastCase = -1;
+
+    /**
+     * @var int
+     */
+    public $dataPosition = -1;
+
+    /**
      * @var Buffer
      */
     protected $buffer;
@@ -69,6 +79,22 @@ class Writer
     public static function createInFile($data = [], $file)
     {
         return new self($data, Buffer::factory(fopen($file, 'wb+')));
+    }
+    
+    /**
+     * @param int $index
+     *
+     * @return string|null
+     */
+    public function getVariableName($index)
+    {
+        $subType = Record\Info\LongVariableNames::SUBTYPE;
+        if (isset($this->info) && isset($this->info[$subType])) {
+            $names = $this->info[$subType]->data;
+            $shortName = (isset($this->variables[$index])) ? $this->variables[$index]->name : "";
+            return (isset($names) && \is_array($names) && isset($names[$shortName])) ? $names[$shortName] : $shortName;
+        }
+        return null;
     }
 
     /**
@@ -177,7 +203,9 @@ class Writer
             }
 
             if (\is_array($var->missing) && (\count($var->missing) !== 0)) {
-                if ($var->width <= 8) {
+                if (Record\Variable::isVeryLong($var->width) !== false) {
+                    $this->info[Record\Info\LongStringMissingValues::SUBTYPE][$shortName] = $var->missing;
+                } else {
                     if (\count($var->missing) >= 3) {
                         $variable->missingValuesFormat = 3;
                     } elseif (2 === \count($var->missing)) {
@@ -186,15 +214,13 @@ class Writer
                         $variable->missingValuesFormat = 1;
                     }
                     $variable->missingValues = $var->missing;
-                } else {
-                    $this->info[Record\Info\LongStringMissingValues::SUBTYPE][$shortName] = $var->missing;
                 }
             }
 
             $this->variables[$idx] = $variable;
 
             if (\is_array($var->values) && (\count($var->values) !== 0)) {
-                if ($variable->width > 8) {
+                if (Record\Variable::isVeryLong($variable->width) !== false) {
                     $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName] = [
                         'width'  => $var->width,
                         'values' => $var->values,
@@ -237,6 +263,7 @@ class Writer
                 $this->header->casesCount = $dataCount;
             }
 
+            $this->data->matrix = [];
             foreach ($var->data as $case => $value) {
                 $this->data->matrix[$case][$idx] = $value;
             }
@@ -276,7 +303,9 @@ class Writer
             $info->write($this->buffer);
         }
 
+        $this->dataPosition = $this->buffer->position();
         $this->data->write($this->buffer);
+        $this->lastCase = $this->header->casesCount - 1;
     }
 
     /**
@@ -295,6 +324,7 @@ class Writer
 
         // write data
         $this->data->writeCase($this->buffer, $row);
+        $this->lastCase = $this->header->casesCount - 1;
     }
 
     /**

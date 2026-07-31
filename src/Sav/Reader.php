@@ -66,16 +66,6 @@ class Reader
         $this->buffer->context = $this;
     }
 
-    /*private function getFullNameLabel($index) {
-        $subType = SPSS\Sav\Record\Info\LongVariableNames::SUBTYPE;
-        if (isset($this->info) && isset($this->info[$subType])) {
-            $names = $this->info[$subType]->data;
-            $shortName = $this->variables[$index]->name;
-            return isset($names[$shortName]) ? $names[$shortName] : $shortName;
-        }
-        return null;
-    }*/
-
     private function readBodyInternal()
     {
         $infoCollection = new Record\InfoCollection();
@@ -103,6 +93,15 @@ class Reader
             }
         } while (Record\Data::TYPE !== $recType);
     }
+    
+    private function haveVar($valueLabel, $variable) {
+        foreach ($valueLabel->indexes as $index) {
+            if ($index == $variable->realPosition) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * @param string $file
@@ -122,6 +121,22 @@ class Reader
     public static function fromString($str)
     {
         return new self(Buffer::factory($str));
+    }
+
+    /**
+     * @param int $index
+     *
+     * @return string|null
+     */
+    public function getVariableName($index)
+    {
+        $subType = Record\Info\LongVariableNames::SUBTYPE;
+        if (isset($this->info) && isset($this->info[$subType])) {
+            $names = $this->info[$subType]->data;
+            $shortName = (isset($this->variables[$index])) ? $this->variables[$index]->name : "";
+            return (isset($names) && \is_array($names) && isset($names[$shortName])) ? $names[$shortName] : $shortName;
+        }
+        return null;
     }
 
     /**
@@ -165,7 +180,7 @@ class Reader
         // encode and another to decode it.
         $headerPosition = $this->buffer->position();
         $this->readBodyInternal();
-
+        $encode = "UTF-8";
         if (isset($this->info) && isset($this->info[Record\Info\CharacterEncoding::SUBTYPE])) {
             $encode = $this->info[Record\Info\CharacterEncoding::SUBTYPE]->value;
             // If is not set assume the UTF-8 encode.
@@ -200,6 +215,25 @@ class Reader
                         isset($veryLongStrings[$var->name]) ?
                             $veryLongStrings[$var->name] : $var->width
                     );
+                    //Read the ValueLabels and set it to $var->values.
+                    if (Record\Variable::isVeryLong($var->width) !== false) {
+                        $longName = $this->getVariableName($newIndex);
+                        $subType = Record\Info\LongStringValueLabels::SUBTYPE;
+                        if (isset($this->info[$subType]) && isset($this->info[$subType][$longName]) && 
+                            isset($this->info[$subType][$longName]["values"])) {
+                            $var->values = $this->info[Record\Info\LongStringValueLabels::SUBTYPE][$longName]["values"];
+                        }
+                    } else {
+                        foreach ($this->valueLabels as $pos => $valueLabel) {
+                            if ($this->haveVar($valueLabel, $var) && isset($valueLabel->labels)) {
+                                foreach($valueLabel->labels as $posV => $valueLabelData) {
+                                    $label = $valueLabelData["label"];
+                                    $var->values[$valueLabelData["value"]] = $label;
+                                }
+                            }
+                        }
+                    }
+
                     $this->variables[] = $var;
                 }
                 $segmentsCount--;

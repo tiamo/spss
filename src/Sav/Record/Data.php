@@ -282,7 +282,7 @@ class Data extends Record
      */
     public function getRow()
     {
-        return (count($this->matrix) > 0) ? $this->matrix[0] : [];
+        return (\count($this->matrix) > 0) ? $this->matrix[0] : [];
     }
 
     /**

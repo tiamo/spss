@@ -46,8 +46,8 @@ class NamingTest extends TestCase
 
         $reader = Reader::fromString($buffer->getStream())->read();
 
-        $this->assertRegExp('/^' . $data['variables'][0]['name'] . '[\w]{13}$/', $reader->info[LongVariableNames::SUBTYPE]['V00001']);
-        $this->assertRegExp('/^' . $data['variables'][1]['name'] . '[\w]{13}$/', $reader->info[LongVariableNames::SUBTYPE]['V00002']);
+        $this->assertMatchesRegularExpression('/^' . $data['variables'][0]['name'] . '[\w]{13}$/', $reader->info[LongVariableNames::SUBTYPE]['V00001']);
+        $this->assertMatchesRegularExpression('/^' . $data['variables'][1]['name'] . '[\w]{13}$/', $reader->info[LongVariableNames::SUBTYPE]['V00002']);
     }
 
     /**

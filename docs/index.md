@@ -14,8 +14,8 @@ $reader->readHeader();
 $reader->read();
 // var_dump($reader->variables);
 // var_dump($reader->valueLabels);
-// var_dump($reader->documents);
-// var_dump($reader->data);
+// var_dump($reader->getDocumentArray());
+// var_dump($reader->getDataArray());
 ```
 or
 ```php

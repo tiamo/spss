@@ -66,6 +66,6 @@ class LongStringTest extends TestCase
         $expected[1][0] = $data['variables'][0]['data'][1];
         $expected[1][1] = $data['variables'][1]['data'][1];
 
-        $this->assertEquals($expected, $reader->data);
+        $this->assertEquals($expected, $reader->getDataArray());
     }
 }

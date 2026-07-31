@@ -81,8 +81,9 @@ class SavRandomReadWriteTest extends TestCase
         $this->checkHeader($data['header'], $reader);
 
         if ($data['documents']) {
-            foreach ($data['documents'] as $key => $doc) {
-                $this->assertEquals($doc, $reader->documents[$key], 'Invalid document line.');
+            $documents = $reader->getDocumentArray();
+            foreach ($data['documents'] as $key => $doc) {    
+                $this->assertEquals($doc, $documents[$key], 'Invalid document line.');
             }
         }
 
@@ -103,9 +104,9 @@ class SavRandomReadWriteTest extends TestCase
             $this->assertEquals($var['decimals'], $readVariable->print[3]);
 
             // Check variable data
-
+            $dataArr = $reader->getDataArray();
             foreach ($var['data'] as $case => $value) {
-                $this->assertEquals($value, $reader->data[$case][$index]);
+                $this->assertEquals($value, $dataArr[$case][$index]);
             }
 
             $index += isset($veryLongStrings[$readVariable->name]) ?

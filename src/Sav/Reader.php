@@ -180,7 +180,6 @@ class Reader
         // encode and another to decode it.
         $headerPosition = $this->buffer->position();
         $this->readBodyInternal();
-        $encode = "UTF-8";
         if (isset($this->info) && isset($this->info[Record\Info\CharacterEncoding::SUBTYPE])) {
             $encode = $this->info[Record\Info\CharacterEncoding::SUBTYPE]->value;
             // If is not set assume the UTF-8 encode.

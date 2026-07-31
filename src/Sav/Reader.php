@@ -229,6 +229,7 @@ class Reader
                                     $label = $valueLabelData["label"];
                                     $var->values[$valueLabelData["value"]] = $label;
                                 }
+                                break;
                             }
                         }
                     }

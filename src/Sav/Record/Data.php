@@ -451,6 +451,13 @@ class Data extends Record
             $width = (isset($var->write) && isset($var->write[2]) && ($var->write[2] !== 0)) ? $var->write[2] : $var->width;
 
             if ($isNumeric) {
+                if (is_string($value) && \in_array($var->write[1], [
+                     \SPSS\Sav\Variable::FORMAT_TYPE_DATE,
+                     \SPSS\Sav\Variable::FORMAT_TYPE_TIME,
+                     \SPSS\Sav\Variable::FORMAT_TYPE_DATETIME,
+                     ], true)) {
+                    $value = Utils::parseSpssDateTime($value, $var->write[1]);
+                }
                 if (!$compressed) {
                     $buffer->writeDouble($value);
                 } elseif ($value === $sysmis || '' === $value) {

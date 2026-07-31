@@ -263,7 +263,6 @@ class Writer
                 $this->header->casesCount = $dataCount;
             }
 
-            $this->data->matrix = [];
             foreach ($var->data as $case => $value) {
                 $this->data->matrix[$case][$idx] = $value;
             }

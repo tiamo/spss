@@ -82,7 +82,7 @@ class SavRandomReadWriteTest extends TestCase
 
         if ($data['documents']) {
             $documents = $reader->getDocumentArray();
-            foreach ($data['documents'] as $key => $doc) {    
+            foreach ($data['documents'] as $key => $doc) {
                 $this->assertEquals($doc, $documents[$key], 'Invalid document line.');
             }
         }
